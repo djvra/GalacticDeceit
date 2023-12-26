@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
+<<<<<<< HEAD
   tags: []
+=======
+  tags:
+  - Body
+>>>>>>> master
   layers:
   - Default
   - TransparentFX
@@ -13,8 +18,13 @@ TagManager:
   - UI
   - 
   - 
+<<<<<<< HEAD
   - 
   - 
+=======
+  - OtherSide
+  - Wall
+>>>>>>> master
   - 
   - 
   - 

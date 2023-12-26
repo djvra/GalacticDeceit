@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 ﻿{
     "name": "IngameDebugConsole.Runtime",
     "references": [
         "Unity.InputSystem"
     ]
+=======
+﻿{
+    "name": "IngameDebugConsole.Runtime",
+    "references": [
+        "Unity.InputSystem"
+    ]
+>>>>>>> master
 }

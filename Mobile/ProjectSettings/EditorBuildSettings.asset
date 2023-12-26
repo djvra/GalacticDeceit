@@ -5,6 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+<<<<<<< HEAD
   - enabled: 1
     path: Assets/Scenes/Client.unity
     guid: 2cda990e2423bbf4892e6590ba056729
@@ -12,3 +13,14 @@ EditorBuildSettings:
     path: Assets/Scenes/Server.unity
     guid: f6e871724bedda749823c7c7cf830b87
   m_configObjects: {}
+=======
+  - enabled: 0
+    path: Assets/Scenes/WaitingRoom.unity
+    guid: f13bbc71228cb414383bbef03a245f69
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 3fc8acdd13e6c734bafef6554d6fdbcd
+  m_configObjects:
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 6c961f1f3f112fd4f8e5158bdb7528f6, type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 88cccc92f0b3b82418f8684db74ebb1d, type: 2}
+>>>>>>> master
