@@ -62,6 +62,10 @@ public class Client : MonoBehaviour
 
             id = response.id;
             Debug.Log($"Login response: {response.id}");
+
+            if (response.id == -1) {
+                Debug.Log("Game is already started!");
+            }
             player = Instantiate(playerPrefab);            
             loginForm.SetActive(false);
             //udpServer.Start(Utils.CLIENT_UDP_PORT);
@@ -78,7 +82,7 @@ public class Client : MonoBehaviour
                 id,
                 udpCounter);
             udpCounter++;
-            //Debug.Log($"udpCounter {udpCounter}");
+            Debug.Log($"position: {player.transform.position}");
             var jsonRequest = JsonUtility.ToJson(playerData);
             var requestPayload = Encoding.ASCII.GetBytes(jsonRequest);
             udpClient.Send(requestPayload, requestPayload.Length, server, Utils.SERVER_UDP_PORT);

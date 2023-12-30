@@ -24,7 +24,7 @@ public:
 
 private slots:
     void registerPlayer(PlayerInfo *player);
-    void updatePlayer();
+    void updateGameMap(QMap<int, ClientData> clients);
 
 private:
     Ui::MainWindow *ui;

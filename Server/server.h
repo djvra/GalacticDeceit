@@ -21,22 +21,25 @@ public:
     QString getLocalIpAddress();
     void start(int port);
     void stop();
+    void startGame();
 
 private slots:
     void handleNewTcpConnection();
     void handleTcpData(QTcpSocket *socket);
     void handleUdpDatagrams();
+    void sendPlayerId();
     void sendPlayerData();
 
-/*
 signals:
-    void updatePlayer(PlayerTransform *ptransform);
-*/
+    void updatePlayers(QMap<int, ClientData> clients);
 
 private:
     QTcpServer *tcpServer;
     QUdpSocket *udpSocket;
+    QTimer *eventTimer;
+    QTimer *updateTimer;
     QMap<int, ClientData> clients;
+    bool isGameStarted;
 
     void processReceivedData(const QByteArray &data);
 };
