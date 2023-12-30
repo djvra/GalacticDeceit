@@ -5,6 +5,9 @@ Server::Server(QWidget *parent)
 {
     tcpServer = new QTcpServer(this);
     udpSocket = new QUdpSocket(this);
+    eventTimer = new QTimer(this);
+    updateTimer = new QTimer(this);
+    isGameStarted = false;
 
     connect(tcpServer, &QTcpServer::newConnection, this, &Server::handleNewTcpConnection);
     connect(udpSocket, &QUdpSocket::readyRead, this, &Server::handleUdpDatagrams);
@@ -29,17 +32,61 @@ void Server::start(int port)
         qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
     }
 
-    QTimer *updateTimer = new QTimer(this);
+    // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
+    int updateInterval = 1000 * 25;
+    eventTimer->start(updateInterval);
+
+    // Set timer to start the game
+
+    // CHANGE TO BUTTON
+    connect(eventTimer, &QTimer::timeout, this, &Server::startGame);
+}
+
+void Server::stop()
+{
+    if (eventTimer && eventTimer->isActive()) {
+        eventTimer->stop();
+        delete eventTimer;
+        eventTimer = nullptr;
+    }
+
+    // Stop the update timer if it's running
+    if (updateTimer && updateTimer->isActive()) {
+        updateTimer->stop();
+        delete updateTimer;
+        updateTimer = nullptr;
+    }
+
+    // Close TCP server
+    if (tcpServer && tcpServer->isListening()) {
+        tcpServer->close();
+    }
+
+    // Close UDP socket
+    if (udpSocket && udpSocket->state() == QUdpSocket::BoundState) {
+        udpSocket->close();
+    }
+
+    qDebug() << "Server stopped.";
+}
+
+void Server::startGame()
+{
+    sendPlayerId();
+    isGameStarted = true;
+
+    qDebug() << "Game is started.";
+
+    // Set up a new timer to send the player informations on each frame
+    if (eventTimer && eventTimer->isActive()) {
+        eventTimer->stop();
+    }
+
     connect(updateTimer, &QTimer::timeout, this, &Server::sendPlayerData);
 
     // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
     int updateInterval = 100;
     updateTimer->start(updateInterval);
-}
-
-void Server::stop()
-{
-
 }
 
 void Server::handleNewTcpConnection()
@@ -54,7 +101,7 @@ void Server::handleNewTcpConnection()
 }
 
 void Server::handleTcpData(QTcpSocket *socket)
-{
+{      
     if (socket->bytesAvailable() > 0) {
         QByteArray requestData = socket->readAll();
         QString jsonString(requestData);
@@ -69,27 +116,32 @@ void Server::handleTcpData(QTcpSocket *socket)
         }
 
         if (jsonDoc.isObject()) {
-            QJsonObject jsonObj = jsonDoc.object();
 
-            // Extract data from JSON object
-            QString clientName = jsonObj["clientName"].toString();
-            QString clientIp = jsonObj["clientIp"].toString();
-            int clientId = clients.size();
+            if (!isGameStarted) {
+                QJsonObject jsonObj = jsonDoc.object();
 
-            ClientData clientData(clientName, QHostAddress(clientIp), clientId);
-            clients.insert(clientId, clientData);
+                // Extract data from JSON object
+                QString clientName = jsonObj["clientName"].toString();
+                QString clientIp = jsonObj["clientIp"].toString();
+                int clientId = clients.size();
 
-            qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket);
+                clients.insert(clientId, clientData);
 
-            // Prepare and send the response JSON
-            QJsonObject responseObj;
-            responseObj["id"] = clientId; // Assuming you want to send the client ID as response
+                qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
 
-            QJsonDocument responseDoc(responseObj);
-            QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
+                /*
 
-            socket->write(responseData); // Sending the response back to the client
+                // Prepare and send the response JSON
+                QJsonObject responseObj;
+                responseObj["id"] = clientId; // Assuming you want to send the client ID as response
 
+                QJsonDocument responseDoc(responseObj);
+                QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
+
+                socket->write(responseData); // Sending the response back to the client
+                */
+            }
         }
     }
 }
@@ -99,12 +151,7 @@ void Server::handleUdpDatagrams()
     while (udpSocket->hasPendingDatagrams()) {
         QByteArray datagram;
         datagram.resize(udpSocket->pendingDatagramSize());
-
-        //QHostAddress senderAddress;
-        //quint16 senderPort;
-        //udpSocket->readDatagram(datagram.data(), datagram.size(), &senderAddress, &senderPort);
         udpSocket->readDatagram(datagram.data(), datagram.size());
-
         processReceivedData(datagram);
     }
 }
@@ -148,21 +195,30 @@ void Server::processReceivedData(const QByteArray &data)
     }
 }
 
+void Server::sendPlayerId()
+{
+    qDebug() << "Send player IDs.";
+
+    // Send serialized JSON data to each client
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        ClientData data = it.value();
+        QTcpSocket* clientTcpSocket = data.getQTcpSocket();
+
+        // Serialize client id to JSON
+        QJsonObject responseObj;
+        responseObj["id"] = data.getId();
+
+        QJsonDocument responseDoc(responseObj);
+        QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
+
+        clientTcpSocket->write(responseData); // Sending the response back to the client
+    }
+    emit initPlayers(clients);
+}
+
 void Server::sendPlayerData()
 {
-
-    // Iterate through your clients
-    for (auto it = clients.begin(); it != clients.end(); ++it) {
-        int clientId = it.key();
-        ClientData &clientData = it.value();
-
-        // Update player transforms or any other necessary data
-        // PlayerTransform playerTransform = // Get player transform data
-
-        // clientData.setPlayerTransform(playerTransform);
-        // int packetCounter = // Get the updated packet counter
-        // clientData.setPacketCounter(packetCounter);
-    }
+    qDebug() << "Update players!";
 
     // Serialize client transforms to JSON
     QJsonObject clientTransformsObject;
@@ -192,6 +248,8 @@ void Server::sendPlayerData()
         // ayni bilgisayarda test etmek icin yazdim, normalde usttekini kullanacagiz
         udpSocket->writeDatagram(payload, clientIp, portNumber++);
     }
+
+    emit updatePlayers(clients);
 }
 
 QString Server::getLocalIpAddress()

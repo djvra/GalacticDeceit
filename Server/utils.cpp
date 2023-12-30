@@ -20,8 +20,8 @@ bool PlayerTransform::getLive() { return isLive; }
 
 void PlayerTransform::setY(float y) {this->y = y; }
 
-ClientData::ClientData(QString name, QHostAddress ip, int id)
-    : name(name), ip(ip), id(id), playerTransform(0, 0, true), packetCounter(0)
+ClientData::ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket)
+    : name(name), ip(ip), id(id), playerTransform(0, 0, true), packetCounter(0), tcpSocket(socket)
 {}
 
 ClientData::ClientData()
@@ -45,3 +45,10 @@ void ClientData::setIpAddress(QHostAddress ip) { this->ip = ip;}
 PlayerTransform ClientData::getPlayerTransform() { return playerTransform; }
 
 void ClientData::setPlayerTransform(PlayerTransform transform) { playerTransform = transform; }
+
+QTcpSocket* ClientData::getQTcpSocket() { return tcpSocket; }
+
+void ClientData::setQTcpSocket(QTcpSocket *socket) { tcpSocket = socket; }
+
+int ClientData::getId() { return id; }
+void ClientData::setId(int id) { this->id = id; }

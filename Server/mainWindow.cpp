@@ -9,12 +9,25 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     ui->graphicsView->setScene(new QGraphicsScene());
-    updatePlayer();
 
     ui->ipAddressLabel->setText("IP Address: " + server->getLocalIpAddress());
 
+    connect(server, &Server::initPlayers, this, &MainWindow::setPlayerLabels);
+    connect(server, &Server::updatePlayers, this, &MainWindow::updateGameMap);
+
     connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
     connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
+
+    for (int i = 0; i < NUM_PLAYERS; ++i) {
+        // Construct the object name dynamically
+        QString iconLabelName = QString("p%1iconLabel").arg(i);
+        QString nameLabelName = QString("p%1nameLabel").arg(i);
+        QString imposterLabelName = QString("p%1imposterLabel").arg(i);
+
+        playerLabels[i].icon = findChild<QLabel *>(iconLabelName);
+        playerLabels[i].name = findChild<QLabel *>(nameLabelName);
+        playerLabels[i].imposter = findChild<QLabel *>(imposterLabelName);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -30,18 +43,28 @@ void MainWindow::startServer()
 
 void MainWindow::stopServer()
 {
+    server->stop();
 }
 
-void MainWindow::registerPlayer(PlayerInfo *player)
+void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
 {
 
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        int id = it.key();
+        ClientData data = it.value();
+
+        // TODO: Set Player Icon
+        // QString imagePath = ":/assets/images/white-among-us.png";
+        // QPixmap pixmap(imagePath);
+        // playerLabels[id].icon->setPixmap(pixmap);
+
+        playerLabels[id].name->setText(data.getName());
+        playerLabels[id].imposter->setText("imposter");
+    }
 }
 
-void MainWindow::updatePlayer()
+void MainWindow::updateGameMap(QMap<int, ClientData> clients)
 {
-
-    int playerX = 300, playerY = 300;
-
     // Access QGraphicsView from the UI
     QGraphicsView *view = ui->graphicsView;
 
@@ -57,13 +80,23 @@ void MainWindow::updatePlayer()
             scene->clear();
 
             // Add the game map image to the scene
-            QGraphicsPixmapItem *mapPixmapItem = scene->addPixmap(mapImage);
-            //view->fitInView(mapPixmapItem, Qt::KeepAspectRatio);
+            scene->addPixmap(mapImage);
 
-            // Create and position the player icon
-            QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(":assets/images/red-among-us.png"));
-            playerIcon->setPos(playerX, playerY);
-            scene->addItem(playerIcon);
+            int xStart = 475;
+            int yStart = 135;
+
+            // Add the players
+            for (auto it = clients.begin(); it != clients.end(); ++it) {                
+                ClientData data = it.value();
+                PlayerTransform transform = data.getPlayerTransform();
+                // Create and position the player icon
+                QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(":assets/images/red-among-us.png"));
+                int posX = xStart + transform.getX() * 11;
+                int posY = yStart + transform.getY() * -11;
+                playerIcon->setPos(posX, posY);
+                scene->addItem(playerIcon);
+            }
         }
     }
 }
+

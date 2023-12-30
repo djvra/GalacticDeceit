@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QNetworkInterface>
+#include <QTcpSocket>
+#include <QLabel>
 
 class Constants {
 public:
@@ -10,7 +12,6 @@ public:
     static const int SERVER_UDP_PORT = 9001;
     static const int CLIENT_UDP_PORT = 9002;
 };
-
 
 class PlayerTransform
 {
@@ -35,7 +36,7 @@ private:
 class ClientData
 {
 public:
-    ClientData(QString name, QHostAddress ip, int id);
+    ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket);
     ClientData();
     ~ClientData();
 
@@ -51,12 +52,19 @@ public:
     PlayerTransform getPlayerTransform();
     void setPlayerTransform(PlayerTransform transform);
 
+    QTcpSocket* getQTcpSocket();
+    void setQTcpSocket(QTcpSocket *socket);
+
+    int getId();
+    void setId(int id);
+
 private:
     QString name;
     QHostAddress ip;
     int id;
     PlayerTransform playerTransform;
     int packetCounter;
+    QTcpSocket *tcpSocket;
 };
 
 struct LoginRequest
@@ -66,4 +74,12 @@ struct LoginRequest
 
     LoginRequest(const QString& name) : clientName(name), clientIp("123") {}
 };
+
+struct PlayerLabels
+{
+    QLabel *name;
+    QLabel *icon;
+    QLabel *imposter;
+};
+
 #endif // UTILS_H

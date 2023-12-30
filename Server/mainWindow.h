@@ -7,6 +7,9 @@
 #include <QGraphicsPixmapItem>
 #include "server.h"
 #include "player.h"
+#include "utils.h"
+
+#define NUM_PLAYERS 6
 
 namespace Ui {
 class MainWindow;
@@ -23,12 +26,13 @@ public:
     void stopServer();
 
 private slots:
-    void registerPlayer(PlayerInfo *player);
-    void updatePlayer();
+    void updateGameMap(QMap<int, ClientData> clients);
+    void setPlayerLabels(QMap<int, ClientData> clients);
 
 private:
     Ui::MainWindow *ui;
     Server *server;
+    PlayerLabels playerLabels[NUM_PLAYERS];
 };
 
 #endif // MAINWINDOW_H
