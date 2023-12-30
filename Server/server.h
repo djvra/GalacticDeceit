@@ -31,6 +31,7 @@ private slots:
     void sendPlayerData();
 
 signals:
+    void initPlayers(QMap<int, ClientData> clients);
     void updatePlayers(QMap<int, ClientData> clients);
 
 private:

@@ -213,6 +213,7 @@ void Server::sendPlayerId()
 
         clientTcpSocket->write(responseData); // Sending the response back to the client
     }
+    emit initPlayers(clients);
 }
 
 void Server::sendPlayerData()

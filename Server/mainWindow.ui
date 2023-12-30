@@ -24,7 +24,7 @@
    </property>
    <layout class="QGridLayout" name="gridLayout_3">
     <item row="0" column="0">
-     <widget class="QLabel" name="redIconLabel_3">
+     <widget class="QLabel" name="p0iconLabels">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/red-among-us.png);</string>
       </property>
@@ -34,21 +34,21 @@
      </widget>
     </item>
     <item row="0" column="1">
-     <widget class="QLabel" name="redPNameLabel_3">
+     <widget class="QLabel" name="p0nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="0" column="2">
-     <widget class="QLabel" name="redInfoLabel_3">
+     <widget class="QLabel" name="p0imposterLabel">
       <property name="text">
        <string>info</string>
       </property>
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QLabel" name="whiteIconLabel_3">
+     <widget class="QLabel" name="p1iconLabel">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/white-among-us.png);</string>
       </property>
@@ -58,21 +58,21 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QLabel" name="whitePNameLabel_3">
+     <widget class="QLabel" name="p1nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="1" column="2">
-     <widget class="QLabel" name="whiteInfoLabel_3">
+     <widget class="QLabel" name="p1imposterLabel">
       <property name="text">
        <string>info</string>
       </property>
      </widget>
     </item>
     <item row="2" column="0">
-     <widget class="QLabel" name="greenIconLabel_3">
+     <widget class="QLabel" name="p2iconLabel">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/green-among-us.png);</string>
       </property>
@@ -82,21 +82,21 @@
      </widget>
     </item>
     <item row="2" column="1">
-     <widget class="QLabel" name="greenPNameLabel_3">
+     <widget class="QLabel" name="p2nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="2" column="2">
-     <widget class="QLabel" name="greenInfoLabel_3">
+     <widget class="QLabel" name="p2imposterLabel">
       <property name="text">
        <string>info</string>
       </property>
      </widget>
     </item>
     <item row="3" column="0">
-     <widget class="QLabel" name="blueIconLabel_3">
+     <widget class="QLabel" name="p3iconLabel">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/light-blue-among-us.png);</string>
       </property>
@@ -106,21 +106,21 @@
      </widget>
     </item>
     <item row="3" column="1">
-     <widget class="QLabel" name="bluePNameLabel_3">
+     <widget class="QLabel" name="p3nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="3" column="2">
-     <widget class="QLabel" name="blueInfoLabel_3">
+     <widget class="QLabel" name="p3imposterLabel">
       <property name="text">
        <string>info</string>
       </property>
      </widget>
     </item>
     <item row="4" column="0">
-     <widget class="QLabel" name="violetIconLabel_3">
+     <widget class="QLabel" name="p4iconLabel">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/violet-among-us.png);</string>
       </property>
@@ -130,21 +130,21 @@
      </widget>
     </item>
     <item row="4" column="1">
-     <widget class="QLabel" name="violetPNameLabel_3">
+     <widget class="QLabel" name="p4nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="4" column="2">
-     <widget class="QLabel" name="violetInfoLabel_3">
+     <widget class="QLabel" name="p4imposterLabel">
       <property name="text">
        <string>info</string>
       </property>
      </widget>
     </item>
     <item row="5" column="0">
-     <widget class="QLabel" name="yellowIconLabel_3">
+     <widget class="QLabel" name="p5iconLabel">
       <property name="styleSheet">
        <string notr="true">image: url(:/assets/images/yellow-among-us.png);</string>
       </property>
@@ -154,14 +154,14 @@
      </widget>
     </item>
     <item row="5" column="1">
-     <widget class="QLabel" name="YellowPNameLabel_3">
+     <widget class="QLabel" name="p5nameLabel">
       <property name="text">
        <string>Player</string>
       </property>
      </widget>
     </item>
     <item row="5" column="2">
-     <widget class="QLabel" name="YellowInfoLabel_3">
+     <widget class="QLabel" name="p5imposterLabel">
       <property name="text">
        <string>info</string>
       </property>

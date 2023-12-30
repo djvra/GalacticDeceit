@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QNetworkInterface>
 #include <QTcpSocket>
+#include <QLabel>
 
 class Constants {
 public:
@@ -73,4 +74,12 @@ struct LoginRequest
 
     LoginRequest(const QString& name) : clientName(name), clientIp("123") {}
 };
+
+struct PlayerLabels
+{
+    QLabel *name;
+    QLabel *icon;
+    QLabel *imposter;
+};
+
 #endif // UTILS_H
