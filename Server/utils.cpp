@@ -25,7 +25,7 @@ ClientData::ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket
 {}
 
 ClientData::ClientData()
-    : name("username"), ip("0.0.0.0"), id(0), playerTransform(0, 0, true), packetCounter(0)
+    : name("username"), ip("0.0.0.0"), id(0), playerTransform(0, 0, true), packetCounter(0), isImposter(false)
 {}
 
 ClientData::~ClientData() {}
@@ -51,4 +51,9 @@ QTcpSocket* ClientData::getQTcpSocket() { return tcpSocket; }
 void ClientData::setQTcpSocket(QTcpSocket *socket) { tcpSocket = socket; }
 
 int ClientData::getId() { return id; }
+
 void ClientData::setId(int id) { this->id = id; }
+
+bool ClientData::getImposter() { return isImposter; }
+
+void ClientData::setImposter(bool isImposter) { this->isImposter = isImposter; }

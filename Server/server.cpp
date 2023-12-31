@@ -72,7 +72,9 @@ void Server::stop()
 
 void Server::startGame()
 {
-    sendPlayerId();
+    chooseImposter();
+    sendPlayerStartingInfo();
+
     isGameStarted = true;
 
     qDebug() << "Game is started.";
@@ -87,6 +89,13 @@ void Server::startGame()
     // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
     int updateInterval = 100;
     updateTimer->start(updateInterval);
+}
+
+void Server::chooseImposter()
+{
+    // Select the imposter randomly
+    int randomIndex = QRandomGenerator::global()->bounded(clients.size());
+    clients[randomIndex].setImposter(true);
 }
 
 void Server::handleNewTcpConnection()
@@ -195,18 +204,19 @@ void Server::processReceivedData(const QByteArray &data)
     }
 }
 
-void Server::sendPlayerId()
+void Server::sendPlayerStartingInfo()
 {
-    qDebug() << "Send player IDs.";
+    qDebug() << "Send player IDs and imposter information.";
 
     // Send serialized JSON data to each client
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
         QTcpSocket* clientTcpSocket = data.getQTcpSocket();
 
-        // Serialize client id to JSON
+        // Serialize client id and imposter information to JSON
         QJsonObject responseObj;
         responseObj["id"] = data.getId();
+        responseObj["imposter"] = data.getImposter();
 
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);

@@ -58,6 +58,9 @@ public:
     int getId();
     void setId(int id);
 
+    bool getImposter();
+    void setImposter(bool isImposter);
+
 private:
     QString name;
     QHostAddress ip;
@@ -65,6 +68,7 @@ private:
     PlayerTransform playerTransform;
     int packetCounter;
     QTcpSocket *tcpSocket;
+    bool isImposter;
 };
 
 struct LoginRequest

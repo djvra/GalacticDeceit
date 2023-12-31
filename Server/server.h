@@ -9,6 +9,7 @@
 #include <QJsonParseError>
 #include <QJsonObject>
 #include <QTimer>
+#include <QRandomGenerator>
 #include <utils.h>
 
 class Server : public QWidget
@@ -22,12 +23,13 @@ public:
     void start(int port);
     void stop();
     void startGame();
+    void chooseImposter();
 
 private slots:
     void handleNewTcpConnection();
     void handleTcpData(QTcpSocket *socket);
     void handleUdpDatagrams();
-    void sendPlayerId();
+    void sendPlayerStartingInfo();
     void sendPlayerData();
 
 signals:
