@@ -6,7 +6,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
 #include "server.h"
-#include "player.h"
 #include "utils.h"
 
 #define NUM_PLAYERS 6

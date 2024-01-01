@@ -12,13 +12,11 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainWindow.cpp \
-    player.cpp \
     server.cpp \
     utils.cpp
 
 HEADERS += \
     mainWindow.h \
-    player.h \
     server.h \
     utils.h
 

@@ -13,6 +13,11 @@ public:
     static const int CLIENT_UDP_PORT = 9002;
 };
 
+enum Color
+{
+    Red, White, Green, Blue, Purple, Yellow
+};
+
 class PlayerTransform
 {
 public:
@@ -36,7 +41,7 @@ private:
 class ClientData
 {
 public:
-    ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket);
+    ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket, Color skinColor);
     ClientData();
     ~ClientData();
 
@@ -61,6 +66,9 @@ public:
     bool getImposter();
     void setImposter(bool isImposter);
 
+    Color getSkinColor();
+    void setSkinColor(Color skinColor);
+
 private:
     QString name;
     QHostAddress ip;
@@ -69,6 +77,7 @@ private:
     int packetCounter;
     QTcpSocket *tcpSocket;
     bool isImposter;
+    Color skinColor;
 };
 
 struct LoginRequest

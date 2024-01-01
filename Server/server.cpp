@@ -27,30 +27,20 @@ void Server::start(int port)
 
     if (!udpSocket->bind(QHostAddress::Any, Constants::SERVER_UDP_PORT)) {
         qDebug() << "UDP Socket could not bind!";
-        // Handle error
     } else {
         qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
     }
-
-    // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
-    int updateInterval = 1000 * 25;
-    eventTimer->start(updateInterval);
-
-    // Set timer to start the game
-
-    // CHANGE TO BUTTON
-    connect(eventTimer, &QTimer::timeout, this, &Server::startGame);
 }
 
 void Server::stop()
 {
+    // Stop the timers if they are running
     if (eventTimer && eventTimer->isActive()) {
         eventTimer->stop();
         delete eventTimer;
         eventTimer = nullptr;
     }
 
-    // Stop the update timer if it's running
     if (updateTimer && updateTimer->isActive()) {
         updateTimer->stop();
         delete updateTimer;
@@ -134,22 +124,10 @@ void Server::handleTcpData(QTcpSocket *socket)
                 QString clientIp = jsonObj["clientIp"].toString();
                 int clientId = clients.size();
 
-                ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket);
+                ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket, (Color) clientId);
                 clients.insert(clientId, clientData);
 
                 qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
-
-                /*
-
-                // Prepare and send the response JSON
-                QJsonObject responseObj;
-                responseObj["id"] = clientId; // Assuming you want to send the client ID as response
-
-                QJsonDocument responseDoc(responseObj);
-                QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
-
-                socket->write(responseData); // Sending the response back to the client
-                */
             }
         }
     }
@@ -191,13 +169,8 @@ void Server::processReceivedData(const QByteArray &data)
             ClientData &data = clients[clientId];
 
             if (data.getPacketCounter() < packetCounter) {
-                /*if(data.getPlayerTransform().getLive()){
-                    qDebug() << "Got new data for user" << clientId << " X:"<<x<< " Y:"<<y;
-                }*/
-
                 // Update client data fields as needed
                 data.setPacketCounter(packetCounter);
-                // Todo: update player position
                 data.setPlayerTransform(PlayerTransform(x, y, true));
             }
         }
@@ -217,6 +190,7 @@ void Server::sendPlayerStartingInfo()
         QJsonObject responseObj;
         responseObj["id"] = data.getId();
         responseObj["imposter"] = data.getImposter();
+        responseObj["color"] = data.getSkinColor();
 
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
@@ -228,8 +202,6 @@ void Server::sendPlayerStartingInfo()
 
 void Server::sendPlayerData()
 {
-    qDebug() << "Update players!";
-
     // Serialize client transforms to JSON
     QJsonObject clientTransformsObject;
     for (auto it = clients.begin(); it != clients.end(); ++it) {

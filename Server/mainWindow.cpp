@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
     connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
+    connect(ui->startGameButton, &QPushButton::clicked, server, &Server::startGame);
 
     for (int i = 0; i < NUM_PLAYERS; ++i) {
         // Construct the object name dynamically
@@ -48,18 +49,25 @@ void MainWindow::stopServer()
 
 void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
 {
+    // Map enum values to icon file representations
+    QMap<Color, QString> colorToString;
+    colorToString[Red] = "red";
+    colorToString[White] = "white";
+    colorToString[Green] = "green";
+    colorToString[Blue] = "light-blue";
+    colorToString[Purple] = "violet";
+    colorToString[Yellow] = "yellow";
 
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         int id = it.key();
         ClientData data = it.value();
 
-        // TODO: Set Player Icon
-        // QString imagePath = ":/assets/images/white-among-us.png";
-        // QPixmap pixmap(imagePath);
-        // playerLabels[id].icon->setPixmap(pixmap);
+        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(colorToString[data.getSkinColor()]);
+        QPixmap image(imagePath);
 
+        playerLabels[id].icon->setPixmap(image);
         playerLabels[id].name->setText(data.getName());
-        playerLabels[id].imposter->setText("imposter");
+        playerLabels[id].imposter->setText(data.getImposter() ? "imposter" : "");
     }
 }
 

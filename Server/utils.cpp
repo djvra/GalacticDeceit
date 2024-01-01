@@ -20,8 +20,8 @@ bool PlayerTransform::getLive() { return isLive; }
 
 void PlayerTransform::setY(float y) {this->y = y; }
 
-ClientData::ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket)
-    : name(name), ip(ip), id(id), playerTransform(0, 0, true), packetCounter(0), tcpSocket(socket)
+ClientData::ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket, Color skinColor)
+    : name(name), ip(ip), id(id), playerTransform(0, 0, true), packetCounter(0), tcpSocket(socket), isImposter(false), skinColor(skinColor)
 {}
 
 ClientData::ClientData()
@@ -57,3 +57,7 @@ void ClientData::setId(int id) { this->id = id; }
 bool ClientData::getImposter() { return isImposter; }
 
 void ClientData::setImposter(bool isImposter) { this->isImposter = isImposter; }
+
+Color ClientData::getSkinColor() { return skinColor; }
+
+void ClientData::setSkinColor(Color skinColor) { this->skinColor = skinColor; }
