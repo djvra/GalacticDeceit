@@ -203,21 +203,22 @@ void Server::sendPlayerStartingInfo()
 void Server::sendPlayerData()
 {
     // Serialize client transforms to JSON
-    QJsonObject clientTransformsObject;
+    QJsonObject clientsDataObject;
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         int clientId = it.key();
-        PlayerTransform playerTransform = it.value().getPlayerTransform();
-        QJsonObject transformObject;
+        ClientData data = it.value();
+        PlayerTransform playerTransform = data.getPlayerTransform();
         QJsonObject positionObject;
         positionObject["x"] = playerTransform.getX();
         positionObject["y"] = playerTransform.getY();
         positionObject["z"] = 0;
-        transformObject["position"] = positionObject;
-
-        clientTransformsObject[QString::number(clientId)] = transformObject;
+        QJsonObject dataObject;
+        dataObject["position"] = positionObject;
+        dataObject["color"] = data.getSkinColor();
+        clientsDataObject[QString::number(clientId)] = dataObject;
     }
 
-    QJsonDocument doc(clientTransformsObject);
+    QJsonDocument doc(clientsDataObject);
     QByteArray payload = doc.toJson();
 
     // Send serialized JSON data to each client // ayni bilgisayarda test icin
