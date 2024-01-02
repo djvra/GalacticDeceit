@@ -5,11 +5,12 @@ using UnityEngine;
 public class ClientTransform
 {
     public Vector3 position;
-    public Quaternion rotation;
+    public int color;
 
-    public ClientTransform(Vector3 position, Quaternion rotation)
+    public ClientTransform(int color, Vector3 position)
     {
+        this.color = color;
         this.position = position;
-        this.rotation = rotation;
     }
+
 }

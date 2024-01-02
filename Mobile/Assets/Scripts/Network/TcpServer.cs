@@ -36,6 +36,7 @@ public class TcpServer
             if (payload.Length > 0)
             {
                 var requestJson = Encoding.ASCII.GetString(payload);
+                Debug.Log($"Received: {requestJson}");
                 var responsePayload = func(requestJson);
 
                 nwStream.Write(responsePayload, 0, responsePayload.Length);

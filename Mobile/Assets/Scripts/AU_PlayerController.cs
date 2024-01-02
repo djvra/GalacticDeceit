@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 public class AU_PlayerController : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class AU_PlayerController : MonoBehaviour
     SpriteRenderer myPartSprite;
 
     //Role
-    [SerializeField] bool isImposter;
+    [SerializeField] public bool isImposter;
     [SerializeField] InputAction KILL;
     float killInput;
 
@@ -36,6 +37,12 @@ public class AU_PlayerController : MonoBehaviour
     bool isDead;
 
     [SerializeField] GameObject bodyPrefab;
+
+    public float killCooldownTime = 15f;
+    private float killCooldownTimer;
+    private bool isKillOnCooldown;
+    public int id;
+    public UnityEvent<int> OnPlayerKilled = new UnityEvent<int>();
 
     private void Awake()
     {
@@ -78,10 +85,10 @@ public class AU_PlayerController : MonoBehaviour
 
         if (!hasControl)
             return;
-        if (myColor == Color.clear)
+
+        /*if (myColor == Color.clear)
             myColor = Color.white;
-       
-        myAvatarSprite.color = myColor;
+        myAvatarSprite.color = myColor;*/
     }
 
     // Update is called once per frame
@@ -95,6 +102,15 @@ public class AU_PlayerController : MonoBehaviour
         if (movementInput.x != 0)
         {
             myAvatar.localScale = new Vector2(Mathf.Sign(movementInput.x), 1);
+        }
+
+        if (isKillOnCooldown)
+        {
+            killCooldownTimer -= Time.deltaTime;
+            if (killCooldownTimer <= 0)
+            {
+                isKillOnCooldown = false;
+            }
         }
 
     }
@@ -149,6 +165,10 @@ public class AU_PlayerController : MonoBehaviour
     }
 
     void KillTarget(InputAction.CallbackContext context) {
+        if (isKillOnCooldown) {
+            return;
+        }
+
         if(context.phase == InputActionPhase.Performed && targets.Count > 0) {
             //Order the list by the distance to the killer
             targets.Sort((entry1, entry2)=> Vector3.Distance(entry1.transform.position, transform.position).CompareTo(Vector3.Distance(entry2.transform.position, transform.position)));
@@ -158,6 +178,9 @@ public class AU_PlayerController : MonoBehaviour
                 if(!target.isDead) {
                     transform.position = target.transform.position;
                     target.Die();
+                    isKillOnCooldown = true;
+                    killCooldownTimer = killCooldownTime;
+                    OnPlayerKilled.Invoke(target.id);
                     break;
                 }
             }
@@ -166,6 +189,9 @@ public class AU_PlayerController : MonoBehaviour
 
     public void Die()
     {
+        if (isDead)
+            return;
+
         isDead = true;
 
         myAnim.SetBool("IsDead", isDead);
@@ -177,7 +203,17 @@ public class AU_PlayerController : MonoBehaviour
         if (myPartSprite != null) {
             myPartSprite.enabled = false;
         }
+
+        //myPartSprite.color = Color.clear;
         
+    }
+
+    public int GetKillCooldownTimer() {
+        if (isImposter) {
+            return (int)killCooldownTimer;
+        }
+
+        return -1;
     }
 
 }

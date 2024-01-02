@@ -1,15 +1,16 @@
 ﻿using System;
+using UnityEngine;
 
 [Serializable]
 public class PlayerDataPacket
 {
-    public ClientTransform clientTransform;
+    public Vector3 position;
     public int clientId;
     public int packetCounter;
 
-    public PlayerDataPacket(ClientTransform clientTransform, int clientId, int packetCounter)
+    public PlayerDataPacket(Vector3 position, int clientId, int packetCounter)
     {
-        this.clientTransform = clientTransform;
+        this.position = position;
         this.clientId = clientId;
         this.packetCounter = packetCounter;
     }

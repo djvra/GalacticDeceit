@@ -116,6 +116,20 @@ void Server::handleTcpData(QTcpSocket *socket)
 
         if (jsonDoc.isObject()) {
 
+            QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
+            //qDebug() << jsonStr;
+            std::string stdStr = jsonStr.toStdString();
+            qDebug() << stdStr.c_str();
+
+            if (isGameStarted) {
+                for (auto it = clients.begin(); it != clients.end(); ++it) {
+                    ClientData data = it.value();
+                    QTcpSocket* clientTcpSocket = data.getQTcpSocket();
+                    QByteArray responseData = jsonStr.toUtf8();
+                    clientTcpSocket->write(responseData); // Sending the response back to the client
+                }
+            }
+
             if (!isGameStarted) {
                 QJsonObject jsonObj = jsonDoc.object();
 
@@ -156,10 +170,14 @@ void Server::processReceivedData(const QByteArray &data)
     if (jsonDoc.isObject()) {
         QJsonObject jsonObj = jsonDoc.object();
 
+        /*QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
+        //qDebug() << jsonStr;
+        std::string stdStr = jsonStr.toStdString();
+        qDebug() << stdStr.c_str();*/
+
         // Extract data from JSON object
         int clientId = jsonObj["clientId"].toInt();
-        QJsonObject clientTransform = jsonObj["clientTransform"].toObject();
-        QJsonObject jsonPosition = clientTransform["position"].toObject();
+        QJsonObject jsonPosition = jsonObj["position"].toObject();
         float x = jsonPosition.value("x").toDouble();
         float y = jsonPosition.value("y").toDouble();
         int packetCounter = jsonObj["packetCounter"].toInt();

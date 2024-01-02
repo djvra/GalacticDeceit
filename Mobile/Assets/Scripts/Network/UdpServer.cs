@@ -40,7 +40,7 @@ public class UdpServer
 
         var payload = client.EndReceive(ar, ref senderIP);
         var requestJson = Encoding.ASCII.GetString(payload);
-        Debug.Log($"Got new data for user {requestJson}");
+        //Debug.Log($"Got new data for user {requestJson}");
         if (requestJson.Length > 0)
         {
             func(requestJson);

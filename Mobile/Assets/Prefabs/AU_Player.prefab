@@ -401,6 +401,14 @@ MonoBehaviour:
       m_Groups: 
       m_Action: WASD
       m_Flags: 8
+    - m_Name: 
+      m_Id: 1ce069b3-e4c9-4df7-871a-8a357aaeb904
+      m_Path: <Gamepad>/leftStick
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: WASD
+      m_Flags: 0
     m_Flags: 0
   movementSpeed: 5
   isImposter: 1
@@ -423,6 +431,11 @@ MonoBehaviour:
     m_Flags: 0
   myCollider: {fileID: 3144332381140516368}
   bodyPrefab: {fileID: 6919226762338134945, guid: 1fc194b2520deeb4a8973984044c280a, type: 3}
+  killCooldownTime: 15
+  id: 0
+  OnPlayerKilled:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!95 &8488909431117619526
 Animator:
   serializedVersion: 5
@@ -493,7 +506,7 @@ Transform:
   m_GameObject: {fileID: 8311817073207153078}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.45, y: 2.17, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
