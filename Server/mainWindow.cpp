@@ -49,20 +49,11 @@ void MainWindow::stopServer()
 
 void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
 {
-    // Map enum values to icon file representations
-    QMap<Color, QString> colorToString;
-    colorToString[Red] = "red";
-    colorToString[White] = "white";
-    colorToString[Green] = "green";
-    colorToString[Blue] = "light-blue";
-    colorToString[Purple] = "violet";
-    colorToString[Yellow] = "yellow";
-
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         int id = it.key();
         ClientData data = it.value();
 
-        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(colorToString[data.getSkinColor()]);
+        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.getSkinColor()]);
         QPixmap image(imagePath);
 
         playerLabels[id].icon->setPixmap(image);
@@ -91,14 +82,15 @@ void MainWindow::updateGameMap(QMap<int, ClientData> clients)
             scene->addPixmap(mapImage);
 
             int xStart = 475;
-            int yStart = 135;
+            int yStart = 130;
 
             // Add the players
             for (auto it = clients.begin(); it != clients.end(); ++it) {                
                 ClientData data = it.value();
                 PlayerTransform transform = data.getPlayerTransform();
                 // Create and position the player icon
-                QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(":assets/images/red-among-us.png"));
+                QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.getSkinColor()]);
+                QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(imagePath));
                 int posX = xStart + transform.getX() * 11;
                 int posY = yStart + transform.getY() * -11;
                 playerIcon->setPos(posX, posY);

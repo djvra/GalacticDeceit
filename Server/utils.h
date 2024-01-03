@@ -6,16 +6,19 @@
 #include <QTcpSocket>
 #include <QLabel>
 
+enum Color
+{
+    Red, White, Green, Blue, Purple, Yellow
+};
+
 class Constants {
 public:
     static const int SERVER_TCP_PORT = 9000;
     static const int SERVER_UDP_PORT = 9001;
     static const int CLIENT_UDP_PORT = 9002;
-};
 
-enum Color
-{
-    Red, White, Green, Blue, Purple, Yellow
+    // Map enum values to icon file representations
+    static QMap<Color, QString> colorToString;
 };
 
 class PlayerTransform

@@ -1,5 +1,14 @@
 #include "utils.h"
 
+QMap<Color, QString> Constants::colorToString = {
+    {Red, "red"},
+    {White, "white"},
+    {Green, "green"},
+    {Blue, "light-blue"},
+    {Purple, "violet"},
+    {Yellow, "yellow"}
+};
+
 PlayerTransform::PlayerTransform(float x, float y, bool isLive) :
     x(x), y(y), isLive(isLive)
 {
