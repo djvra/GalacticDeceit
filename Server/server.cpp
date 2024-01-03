@@ -85,7 +85,7 @@ void Server::chooseImposter()
 {
     // Select the imposter randomly
     int randomIndex = QRandomGenerator::global()->bounded(clients.size());
-    clients[randomIndex].setImposter(true);
+    clients[randomIndex].isImposter = true;
 }
 
 void Server::handleNewTcpConnection()
@@ -115,33 +115,44 @@ void Server::handleTcpData(QTcpSocket *socket)
         }
 
         if (jsonDoc.isObject()) {
-
             QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-            //qDebug() << jsonStr;
             std::string stdStr = jsonStr.toStdString();
             qDebug() << stdStr.c_str();
 
+            // TODO: REMOVE THIS
             if (isGameStarted) {
                 for (auto it = clients.begin(); it != clients.end(); ++it) {
                     ClientData data = it.value();
-                    QTcpSocket* clientTcpSocket = data.getQTcpSocket();
+                    QTcpSocket* clientTcpSocket = data.tcpSocket;
                     QByteArray responseData = jsonStr.toUtf8();
                     clientTcpSocket->write(responseData); // Sending the response back to the client
                 }
             }
 
-            if (!isGameStarted) {
-                QJsonObject jsonObj = jsonDoc.object();
+            QJsonObject jsonObj = jsonDoc.object();
+            int requestType = jsonObj["clientName"].toInt();
+            int id = jsonObj["id"].toInt();
 
-                // Extract data from JSON object
-                QString clientName = jsonObj["clientName"].toString();
-                QString clientIp = jsonObj["clientIp"].toString();
-                int clientId = clients.size();
+            switch (requestType) {
+            case Login:
+                if (!isGameStarted) {
+                    QJsonObject jsonObj = jsonDoc.object();
+                    // Extract data from JSON object
+                    QString clientName = jsonObj["clientName"].toString();
+                    QString clientIp = jsonObj["clientIp"].toString();
+                    int clientId = clients.size();
 
-                ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket, (Color) clientId);
-                clients.insert(clientId, clientData);
+                    ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket, (Color) clientId);
+                    clients.insert(clientId, clientData);
 
-                qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                    qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                }
+                break;
+            case TaskDone:
+                clients[id].remainingTask -= 1;
+                break;
+            default:
+                break;
             }
         }
     }
@@ -186,10 +197,10 @@ void Server::processReceivedData(const QByteArray &data)
         if (clients.contains(clientId)) {
             ClientData &data = clients[clientId];
 
-            if (data.getPacketCounter() < packetCounter) {
+            if (data.packetCounter < packetCounter) {
                 // Update client data fields as needed
-                data.setPacketCounter(packetCounter);
-                data.setPlayerTransform(PlayerTransform(x, y, true));
+                data.packetCounter = packetCounter;
+                data.playerTransform = PlayerTransform(x, y, true);
             }
         }
     }
@@ -202,13 +213,13 @@ void Server::sendPlayerStartingInfo()
     // Send serialized JSON data to each client
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
-        QTcpSocket* clientTcpSocket = data.getQTcpSocket();
+        QTcpSocket* clientTcpSocket = data.tcpSocket;
 
         // Serialize client id and imposter information to JSON
         QJsonObject responseObj;
-        responseObj["id"] = data.getId();
-        responseObj["imposter"] = data.getImposter();
-        responseObj["color"] = data.getSkinColor();
+        responseObj["id"] = data.id;
+        responseObj["imposter"] = data.isImposter;
+        responseObj["color"] = data.skinColor;
 
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
@@ -225,14 +236,14 @@ void Server::sendPlayerData()
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         int clientId = it.key();
         ClientData data = it.value();
-        PlayerTransform playerTransform = data.getPlayerTransform();
+        PlayerTransform playerTransform = data.playerTransform;
         QJsonObject positionObject;
-        positionObject["x"] = playerTransform.getX();
-        positionObject["y"] = playerTransform.getY();
+        positionObject["x"] = playerTransform.x;
+        positionObject["y"] = playerTransform.y;
         positionObject["z"] = 0;
         QJsonObject dataObject;
         dataObject["position"] = positionObject;
-        dataObject["color"] = data.getSkinColor();
+        dataObject["color"] = data.skinColor;
         clientsDataObject[QString::number(clientId)] = dataObject;
     }
 
@@ -242,7 +253,7 @@ void Server::sendPlayerData()
     // Send serialized JSON data to each client // ayni bilgisayarda test icin
     int portNumber = Constants::CLIENT_UDP_PORT;
     for (auto it = clients.begin(); it != clients.end(); ++it) {
-        QHostAddress clientIp = it.value().getIpAddress();
+        QHostAddress clientIp = it.value().ip;
         //qDebug() << clientIp;
         //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
 

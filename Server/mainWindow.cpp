@@ -53,12 +53,12 @@ void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
         int id = it.key();
         ClientData data = it.value();
 
-        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.getSkinColor()]);
+        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
         QPixmap image(imagePath);
 
         playerLabels[id].icon->setPixmap(image);
-        playerLabels[id].name->setText(data.getName());
-        playerLabels[id].imposter->setText(data.getImposter() ? "imposter" : "");
+        playerLabels[id].name->setText(data.name);
+        playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "");
     }
 }
 
@@ -87,12 +87,12 @@ void MainWindow::updateGameMap(QMap<int, ClientData> clients)
             // Add the players
             for (auto it = clients.begin(); it != clients.end(); ++it) {                
                 ClientData data = it.value();
-                PlayerTransform transform = data.getPlayerTransform();
+                PlayerTransform transform = data.playerTransform;
                 // Create and position the player icon
-                QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.getSkinColor()]);
+                QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
                 QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(imagePath));
-                int posX = xStart + transform.getX() * 11;
-                int posY = yStart + transform.getY() * -11;
+                int posX = xStart + transform.x * 11;
+                int posY = yStart + transform.y * -11;
                 playerIcon->setPos(posX, posY);
                 scene->addItem(playerIcon);
             }
