@@ -43,6 +43,7 @@ public class AU_PlayerController : MonoBehaviour
     private bool isKillOnCooldown;
     public int id;
     public UnityEvent<int> OnPlayerKilled = new UnityEvent<int>();
+    public bool isMoving;
 
     private void Awake()
     {
@@ -118,6 +119,7 @@ public class AU_PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         myRB.velocity = movementInput * movementSpeed;
+        isMoving = movementInput.magnitude != 0 ? true : false;
     }
 
     public void SetColor(Color newColor)
@@ -187,6 +189,30 @@ public class AU_PlayerController : MonoBehaviour
         }
     }
 
+    public void KillTarget(bool killButton)
+    {
+        if (isKillOnCooldown) {
+            return;
+        }
+
+        if(killButton && targets.Count > 0) {
+            //Order the list by the distance to the killer
+            targets.Sort((entry1, entry2)=> Vector3.Distance(entry1.transform.position, transform.position).CompareTo(Vector3.Distance(entry2.transform.position, transform.position)));
+            //Loop through the list and kill the nearest person who is alive.
+            for(int i = 0; i < targets.Count; i++) {
+                AU_PlayerController target = targets[i];
+                if(!target.isDead) {
+                    transform.position = target.transform.position;
+                    target.Die();
+                    isKillOnCooldown = true;
+                    killCooldownTimer = killCooldownTime;
+                    OnPlayerKilled.Invoke(target.id);
+                    break;
+                }
+            }
+        }
+    }
+
     public void Die()
     {
         if (isDead)
@@ -215,5 +241,7 @@ public class AU_PlayerController : MonoBehaviour
 
         return -1;
     }
+
+    
 
 }

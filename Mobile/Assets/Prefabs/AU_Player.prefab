@@ -265,6 +265,7 @@ GameObject:
   - component: {fileID: 3687337428952733473}
   - component: {fileID: 8488909431117619526}
   - component: {fileID: 3720013272044621589}
+  - component: {fileID: 8813321240669603062}
   m_Layer: 0
   m_Name: AU_Player
   m_TagString: Player
@@ -436,6 +437,7 @@ MonoBehaviour:
   OnPlayerKilled:
     m_PersistentCalls:
       m_Calls: []
+  isMoving: 0
 --- !u!95 &8488909431117619526
 Animator:
   serializedVersion: 5
@@ -478,6 +480,23 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.5
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8813321240669603062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7224724015843725361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 157e3c0e4014fc4ec8bb600052bb608a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 10
+  rb: {fileID: 1580911347279221801}
+  joystickData: 
+  deviceName: HC-05
+  sampleData: 
 --- !u!1 &8311817073207153078
 GameObject:
   m_ObjectHideFlags: 0
