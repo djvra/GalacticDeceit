@@ -6,14 +6,16 @@
 #include <QTcpSocket>
 #include <QLabel>
 
+#define NUM_PLAYER_TASKS 2
+
 enum Color
 {
     Red, White, Green, Blue, Purple, Yellow
 };
 
-enum RequestType
+enum ActionType
 {
-    Login, TaskDone
+    Login, TaskDone, Killed, Report
 };
 
 class Constants {
@@ -50,7 +52,8 @@ public:
     QTcpSocket *tcpSocket;
     bool isImposter;
     Color skinColor;
-    int remainingTask;
+    int numRemainingTask;
+    bool alive;
 };
 
 
@@ -59,6 +62,7 @@ struct PlayerLabels
     QLabel *name;
     QLabel *icon;
     QLabel *imposter;
+    QLabel *alive;
 };
 
 #endif // UTILS_H

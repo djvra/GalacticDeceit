@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(server, &Server::initPlayers, this, &MainWindow::setPlayerLabels);
     connect(server, &Server::updatePlayers, this, &MainWindow::updateGameMap);
+    connect(server, &Server::killedPlayer, this, &MainWindow::updateKilledPlayerLabel);
 
     connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
     connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
@@ -24,10 +25,12 @@ MainWindow::MainWindow(QWidget *parent)
         QString iconLabelName = QString("p%1iconLabel").arg(i);
         QString nameLabelName = QString("p%1nameLabel").arg(i);
         QString imposterLabelName = QString("p%1imposterLabel").arg(i);
+        QString aliveLabelName = QString("p%1aliveLabel").arg(i);
 
         playerLabels[i].icon = findChild<QLabel *>(iconLabelName);
         playerLabels[i].name = findChild<QLabel *>(nameLabelName);
         playerLabels[i].imposter = findChild<QLabel *>(imposterLabelName);
+        playerLabels[i].alive = findChild<QLabel *>(aliveLabelName);
     }
 }
 
@@ -58,8 +61,14 @@ void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
 
         playerLabels[id].icon->setPixmap(image);
         playerLabels[id].name->setText(data.name);
-        playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "");
+        playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "crewmate");
+        playerLabels[id].alive->setText(data.alive ? "alive" : "dead");
     }
+}
+
+void MainWindow::updateKilledPlayerLabel(int id)
+{
+    playerLabels[id].alive->setText("dead");
 }
 
 void MainWindow::updateGameMap(QMap<int, ClientData> clients)

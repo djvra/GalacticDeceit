@@ -24,6 +24,10 @@ public:
     void stop();
     void startGame();
     void chooseImposter();
+    QMap<int, ClientData>::iterator findImposter();
+    bool isImposterAlive();
+    bool isGameOver();
+    void checkGameStatus();
 
 private slots:
     void handleNewTcpConnection();
@@ -35,6 +39,7 @@ private slots:
 signals:
     void initPlayers(QMap<int, ClientData> clients);
     void updatePlayers(QMap<int, ClientData> clients);
+    void killedPlayer(int id);
 
 private:
     QTcpServer *tcpServer;
@@ -43,6 +48,7 @@ private:
     QTimer *updateTimer;
     QMap<int, ClientData> clients;
     bool isGameStarted;
+    int numRemainingPlayers;
 
     void processReceivedData(const QByteArray &data);
 };

@@ -27,6 +27,7 @@ public:
 private slots:
     void updateGameMap(QMap<int, ClientData> clients);
     void setPlayerLabels(QMap<int, ClientData> clients);
+    void updateKilledPlayerLabel(int id);
 
 private:
     Ui::MainWindow *ui;

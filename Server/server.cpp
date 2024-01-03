@@ -8,6 +8,7 @@ Server::Server(QWidget *parent)
     eventTimer = new QTimer(this);
     updateTimer = new QTimer(this);
     isGameStarted = false;
+    numRemainingPlayers = 0;
 
     connect(tcpServer, &QTcpServer::newConnection, this, &Server::handleNewTcpConnection);
     connect(udpSocket, &QUdpSocket::readyRead, this, &Server::handleUdpDatagrams);
@@ -66,6 +67,7 @@ void Server::startGame()
     sendPlayerStartingInfo();
 
     isGameStarted = true;
+    numRemainingPlayers = clients.size();
 
     qDebug() << "Game is started.";
 
@@ -130,10 +132,10 @@ void Server::handleTcpData(QTcpSocket *socket)
             }
 
             QJsonObject jsonObj = jsonDoc.object();
-            int requestType = jsonObj["clientName"].toInt();
+            int actionType = jsonObj["actionType"].toInt();
             int id = jsonObj["id"].toInt();
 
-            switch (requestType) {
+            switch (actionType) {
             case Login:
                 if (!isGameStarted) {
                     QJsonObject jsonObj = jsonDoc.object();
@@ -148,14 +150,68 @@ void Server::handleTcpData(QTcpSocket *socket)
                     qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
                 }
                 break;
+            case Report:
+                // TODO: Not implemented Yet
+                break;
+            case Killed:
+                clients[id].alive = false;
+                --numRemainingPlayers;
+                checkGameStatus();
+                // Notify the desktop application to be able to update the player status labels
+                emit killedPlayer(id);
+                break;
             case TaskDone:
-                clients[id].remainingTask -= 1;
+                clients[id].numRemainingTask -= 1;
+                checkGameStatus();
                 break;
             default:
                 break;
             }
         }
     }
+}
+
+QMap<int, ClientData>::iterator Server::findImposter() {
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        ClientData data = it.value();
+        if (data.isImposter)
+            return it; // Return the iterator if imposter is found
+    }
+    return clients.end(); // Return the end iterator if imposter is not found
+}
+
+void Server::checkGameStatus()
+{
+    // TODO: Revisite the finishing conditions
+    if (isGameOver()) {
+        // TODO: Send necessary information to the clients
+        if (isImposterAlive()) {
+            qDebug() << "Game is over. Imposter win!";
+        }
+        else {
+            qDebug() << "Game is over. Crewmate win!";
+        }
+    }
+}
+
+bool Server::isImposterAlive()
+{
+    QMap<int, ClientData>::iterator imposter = findImposter();
+    return imposter != clients.end() && imposter.value().alive;
+}
+
+bool Server::isGameOver()
+{
+    if (numRemainingPlayers == 1)
+        return true;
+
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        ClientData data = it.value();
+        if (data.numRemainingTask > 0 && !data.isImposter)
+            return false;
+    }
+
+    return true;
 }
 
 void Server::handleUdpDatagrams()
@@ -192,7 +248,6 @@ void Server::processReceivedData(const QByteArray &data)
         float x = jsonPosition.value("x").toDouble();
         float y = jsonPosition.value("y").toDouble();
         int packetCounter = jsonObj["packetCounter"].toInt();
-        //qDebug() << "packetCounter: " << packetCounter;
 
         if (clients.contains(clientId)) {
             ClientData &data = clients[clientId];
@@ -220,6 +275,7 @@ void Server::sendPlayerStartingInfo()
         responseObj["id"] = data.id;
         responseObj["imposter"] = data.isImposter;
         responseObj["color"] = data.skinColor;
+        responseObj["numRemainingTask"] = data.numRemainingTask;
 
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
