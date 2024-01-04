@@ -7,6 +7,7 @@
 #include <QLabel>
 
 #define NUM_PLAYER_TASKS 2
+#define NUM_PLAYERS 6
 
 enum Color
 {
@@ -62,6 +63,7 @@ struct PlayerLabels
     QLabel *name;
     QLabel *icon;
     QLabel *imposter;
+    QLabel *numTasks;
     QLabel *alive;
 };
 

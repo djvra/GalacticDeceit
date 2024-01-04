@@ -12,9 +12,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->ipAddressLabel->setText("IP Address: " + server->getLocalIpAddress());
 
-    connect(server, &Server::initPlayers, this, &MainWindow::setPlayerLabels);
-    connect(server, &Server::updatePlayers, this, &MainWindow::updateGameMap);
-    connect(server, &Server::killedPlayer, this, &MainWindow::updateKilledPlayerLabel);
+    connect(server, &Server::initPlayers, this, &MainWindow::setAllPlayerLabels);
+    connect(server, &Server::updateGameMap, this, &MainWindow::setGameMap);
+    connect(server, &Server::updatePlayer, this, &MainWindow::setPlayerLabel);
 
     connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
     connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
@@ -25,11 +25,13 @@ MainWindow::MainWindow(QWidget *parent)
         QString iconLabelName = QString("p%1iconLabel").arg(i);
         QString nameLabelName = QString("p%1nameLabel").arg(i);
         QString imposterLabelName = QString("p%1imposterLabel").arg(i);
+        QString numTasksLabelName = QString("p%1numTasksLabel").arg(i);
         QString aliveLabelName = QString("p%1aliveLabel").arg(i);
 
         playerLabels[i].icon = findChild<QLabel *>(iconLabelName);
         playerLabels[i].name = findChild<QLabel *>(nameLabelName);
         playerLabels[i].imposter = findChild<QLabel *>(imposterLabelName);
+        playerLabels[i].numTasks = findChild<QLabel *>(numTasksLabelName);
         playerLabels[i].alive = findChild<QLabel *>(aliveLabelName);
     }
 }
@@ -48,30 +50,29 @@ void MainWindow::startServer()
 void MainWindow::stopServer()
 {
     server->stop();
+    clearGameMap();
+    clearPlayerLabels();
 }
 
-void MainWindow::setPlayerLabels(QMap<int, ClientData> clients)
+void MainWindow::setPlayerLabel(ClientData data)
 {
-    for (auto it = clients.begin(); it != clients.end(); ++it) {
-        int id = it.key();
-        ClientData data = it.value();
-
-        QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
-        QPixmap image(imagePath);
-
-        playerLabels[id].icon->setPixmap(image);
-        playerLabels[id].name->setText(data.name);
-        playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "crewmate");
-        playerLabels[id].alive->setText(data.alive ? "alive" : "dead");
-    }
+    QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
+    QPixmap image(imagePath);
+    int id = data.id;
+    playerLabels[id].icon->setPixmap(image);
+    playerLabels[id].name->setText(data.name);
+    playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "crewmate");
+    playerLabels[id].numTasks->setText(QString::number(data.numRemainingTask));
+    playerLabels[id].alive->setText(data.alive ? "alive" : "dead");
 }
 
-void MainWindow::updateKilledPlayerLabel(int id)
+void MainWindow::setAllPlayerLabels(QMap<int, ClientData> clients)
 {
-    playerLabels[id].alive->setText("dead");
+    for (auto it = clients.begin(); it != clients.end(); ++it)
+        setPlayerLabel(it.value());
 }
 
-void MainWindow::updateGameMap(QMap<int, ClientData> clients)
+void MainWindow::setGameMap(QMap<int, ClientData> clients)
 {
     // Access QGraphicsView from the UI
     QGraphicsView *view = ui->graphicsView;
@@ -106,6 +107,33 @@ void MainWindow::updateGameMap(QMap<int, ClientData> clients)
                 scene->addItem(playerIcon);
             }
         }
+    }
+}
+
+void MainWindow::clearGameMap()
+{
+    // Access QGraphicsView from the UI
+    QGraphicsView *view = ui->graphicsView;
+
+    if (view) {
+        // Retrieve the QGraphicsScene from the QGraphicsView
+        QGraphicsScene *scene = view->scene();
+
+        if (scene) {
+            // Clear the scene before adding the map image
+            scene->clear();
+        }
+    }
+}
+
+void MainWindow::clearPlayerLabels()
+{
+    for (int i = 0; i < NUM_PLAYERS; ++i) {
+        playerLabels[i].icon->clear();
+        playerLabels[i].name->clear();
+        playerLabels[i].imposter->clear();
+        playerLabels[i].numTasks->clear();
+        playerLabels[i].alive->clear();
     }
 }
 

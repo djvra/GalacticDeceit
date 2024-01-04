@@ -39,8 +39,8 @@ private slots:
 
 signals:
     void initPlayers(QMap<int, ClientData> clients);
-    void updatePlayers(QMap<int, ClientData> clients);
-    void killedPlayer(int id);
+    void updateGameMap(QMap<int, ClientData> clients);
+    void updatePlayer(ClientData client);
 
 private:
     QTcpServer *tcpServer;

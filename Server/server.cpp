@@ -118,8 +118,6 @@ void Server::handleTcpData(QTcpSocket *socket)
 
         if (jsonDoc.isObject()) {
             QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-            std::string stdStr = jsonStr.toStdString();
-            qDebug() << stdStr.c_str();
 
             // TODO: REMOVE THIS
             if (isGameStarted) {
@@ -158,7 +156,7 @@ void Server::handleTcpData(QTcpSocket *socket)
                 --numRemainingPlayers;
                 checkGameStatus();
                 // Notify the desktop application to be able to update the player status labels
-                emit killedPlayer(id);
+                emit updatePlayer(clients[id]);
                 break;
             case TaskDone:
                 clients[id].numRemainingTask -= 1;
@@ -276,8 +274,6 @@ void Server::sendAllClients(QByteArray sendData)
 
 void Server::sendPlayerStartingInfo()
 {
-    qDebug() << "Send player IDs and imposter information.";
-
     // Send serialized JSON data to each client
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
@@ -324,14 +320,13 @@ void Server::sendPlayerData()
     int portNumber = Constants::CLIENT_UDP_PORT;
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         QHostAddress clientIp = it.value().ip;
-        //qDebug() << clientIp;
-        //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
 
+        //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
         // ayni bilgisayarda test etmek icin yazdim, normalde usttekini kullanacagiz
         udpSocket->writeDatagram(payload, clientIp, portNumber++);
     }
 
-    emit updatePlayers(clients);
+    emit updateGameMap(clients);
 }
 
 QString Server::getLocalIpAddress()

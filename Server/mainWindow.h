@@ -8,8 +8,6 @@
 #include "server.h"
 #include "utils.h"
 
-#define NUM_PLAYERS 6
-
 namespace Ui {
 class MainWindow;
 }
@@ -23,11 +21,13 @@ public:
     ~MainWindow();
     void startServer();
     void stopServer();
+    void clearGameMap();
+    void clearPlayerLabels();
 
 private slots:
-    void updateGameMap(QMap<int, ClientData> clients);
-    void setPlayerLabels(QMap<int, ClientData> clients);
-    void updateKilledPlayerLabel(int id);
+    void setGameMap(QMap<int, ClientData> clients);
+    void setPlayerLabel(ClientData data);
+    void setAllPlayerLabels(QMap<int, ClientData> clients);
 
 private:
     Ui::MainWindow *ui;
