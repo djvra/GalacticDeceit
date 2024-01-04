@@ -60,6 +60,11 @@ void Server::stop()
 
 void Server::startGame()
 {
+    if (clients.size() < 1) {
+        qDebug() << "Game couldn't started due to insufficient number of players.";
+        return;
+    }
+
     chooseImposter();
     sendPlayerStartingInfo();
 
