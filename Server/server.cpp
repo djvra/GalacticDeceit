@@ -36,17 +36,11 @@ void Server::start(int port)
 void Server::stop()
 {
     // Stop the timers if they are running
-    if (eventTimer && eventTimer->isActive()) {
+    if (eventTimer && eventTimer->isActive())
         eventTimer->stop();
-        delete eventTimer;
-        eventTimer = nullptr;
-    }
 
-    if (updateTimer && updateTimer->isActive()) {
+    if (updateTimer->isActive())
         updateTimer->stop();
-        delete updateTimer;
-        updateTimer = nullptr;
-    }
 
     // Close TCP server
     if (tcpServer && tcpServer->isListening()) {
@@ -57,6 +51,9 @@ void Server::stop()
     if (udpSocket && udpSocket->state() == QUdpSocket::BoundState) {
         udpSocket->close();
     }
+
+    isGameStarted = false;
+    clients.clear();
 
     qDebug() << "Server stopped.";
 }

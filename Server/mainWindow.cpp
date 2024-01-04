@@ -6,10 +6,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , server(new Server)
 {
+    this->setWindowTitle("Galactic Deceit");
+
     ui->setupUi(this);
-
     ui->graphicsView->setScene(new QGraphicsScene());
-
     ui->ipAddressLabel->setText("IP Address: " + server->getLocalIpAddress());
 
     connect(server, &Server::initPlayers, this, &MainWindow::setAllPlayerLabels);
