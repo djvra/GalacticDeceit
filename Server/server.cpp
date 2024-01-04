@@ -184,13 +184,23 @@ void Server::checkGameStatus()
 {
     // TODO: Revisite the finishing conditions
     if (isGameOver()) {
-        // TODO: Send necessary information to the clients
+        QString winner;
         if (isImposterAlive()) {
             qDebug() << "Game is over. Imposter win!";
+            winner = "imposter";
         }
         else {
             qDebug() << "Game is over. Crewmate win!";
+            winner = "crewmates";
         }
+
+        QJsonObject responseObj;
+        responseObj["actionType"] = GameOver;
+        responseObj["winner"] = winner;
+        QJsonDocument responseDoc(responseObj);
+        sendAllClients(responseDoc.toJson(QJsonDocument::Compact));
+
+        // TODO-NEXT: Clear clients map, set isGameStarted as false
     }
 }
 
@@ -237,11 +247,6 @@ void Server::processReceivedData(const QByteArray &data)
     if (jsonDoc.isObject()) {
         QJsonObject jsonObj = jsonDoc.object();
 
-        /*QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-        //qDebug() << jsonStr;
-        std::string stdStr = jsonStr.toStdString();
-        qDebug() << stdStr.c_str();*/
-
         // Extract data from JSON object
         int clientId = jsonObj["clientId"].toInt();
         QJsonObject jsonPosition = jsonObj["position"].toObject();
@@ -261,6 +266,14 @@ void Server::processReceivedData(const QByteArray &data)
     }
 }
 
+void Server::sendAllClients(QByteArray sendData)
+{
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        QTcpSocket* clientTcpSocket = it.value().tcpSocket;
+        clientTcpSocket->write(sendData);
+    }
+}
+
 void Server::sendPlayerStartingInfo()
 {
     qDebug() << "Send player IDs and imposter information.";
@@ -272,6 +285,7 @@ void Server::sendPlayerStartingInfo()
 
         // Serialize client id and imposter information to JSON
         QJsonObject responseObj;
+        responseObj["actionType"] = GameStarted;
         responseObj["id"] = data.id;
         responseObj["imposter"] = data.isImposter;
         responseObj["color"] = data.skinColor;
@@ -280,7 +294,7 @@ void Server::sendPlayerStartingInfo()
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
 
-        clientTcpSocket->write(responseData); // Sending the response back to the client
+        clientTcpSocket->write(responseData);
     }
     emit initPlayers(clients);
 }

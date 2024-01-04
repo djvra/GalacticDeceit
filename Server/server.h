@@ -28,6 +28,7 @@ public:
     bool isImposterAlive();
     bool isGameOver();
     void checkGameStatus();
+    void sendAllClients(QByteArray sendData);
 
 private slots:
     void handleNewTcpConnection();
