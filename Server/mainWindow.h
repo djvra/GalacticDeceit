@@ -19,8 +19,8 @@ class MainWindow : public QWidget
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void startServer();
-    void stopServer();
+    void startGame();
+    void stopGame();
     void clearGameMap();
     void clearPlayerLabels();
 

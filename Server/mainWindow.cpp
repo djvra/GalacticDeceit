@@ -16,9 +16,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(server, &Server::updateGameMap, this, &MainWindow::setGameMap);
     connect(server, &Server::updatePlayer, this, &MainWindow::setPlayerLabel);
 
-    connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
-    connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
-    connect(ui->startGameButton, &QPushButton::clicked, server, &Server::startGame);
+    //connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
+    //connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
+    connect(ui->startGameButton, &QPushButton::clicked, this, &MainWindow::startGame);
+    connect(ui->stopGameButton, &QPushButton::clicked, this, &MainWindow::stopGame);
 
     for (int i = 0; i < NUM_PLAYERS; ++i) {
         // Construct the object name dynamically
@@ -34,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
         playerLabels[i].numTasks = findChild<QLabel *>(numTasksLabelName);
         playerLabels[i].alive = findChild<QLabel *>(aliveLabelName);
     }
+
+    server->start(Constants::SERVER_TCP_PORT);
 }
 
 MainWindow::~MainWindow()
@@ -41,15 +44,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::startServer()
+void MainWindow::startGame()
 {
-    int port = ui->portLineEdit->text().toInt();
-    server->start(port);
+    server->startGame();
 }
 
-void MainWindow::stopServer()
+void MainWindow::stopGame()
 {
-    server->stop();
+    server->stopGame();
     clearGameMap();
     clearPlayerLabels();
 }

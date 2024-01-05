@@ -23,6 +23,7 @@ public:
     void start(int port);
     void stop();
     void startGame();
+    void stopGame();
     void chooseImposter();
     QMap<int, ClientData>::iterator findImposter();
     bool isImposterAlive();

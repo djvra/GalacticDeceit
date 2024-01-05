@@ -52,10 +52,15 @@ void Server::stop()
         udpSocket->close();
     }
 
-    isGameStarted = false;
-    clients.clear();
+    stopGame();
 
     qDebug() << "Server stopped.";
+}
+
+void Server::stopGame()
+{
+    isGameStarted = false;
+    clients.clear();
 }
 
 void Server::startGame()
@@ -319,13 +324,13 @@ void Server::sendPlayerData()
     QByteArray payload = doc.toJson();
 
     // Send serialized JSON data to each client // ayni bilgisayarda test icin
-    int portNumber = Constants::CLIENT_UDP_PORT;
+    // int portNumberTest = Constants::CLIENT_UDP_PORT;
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         QHostAddress clientIp = it.value().ip;
 
-        //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
+        udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
         // ayni bilgisayarda test etmek icin yazdim, normalde usttekini kullanacagiz
-        udpSocket->writeDatagram(payload, clientIp, portNumber++);
+        // udpSocket->writeDatagram(payload, clientIp, portNumberTest++);
     }
 
     emit updateGameMap(clients);
