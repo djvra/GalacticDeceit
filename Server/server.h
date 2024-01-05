@@ -20,10 +20,16 @@ public:
     explicit Server(QWidget *parent = nullptr);
     ~Server();
     QString getLocalIpAddress();
-    void start(int port);
+    bool start(int port);
     void stop();
     void startGame();
+    void stopGame();
     void chooseImposter();
+    QMap<int, ClientData>::iterator findImposter();
+    bool isImposterAlive();
+    bool isGameOver();
+    void checkGameStatus();
+    void sendAllClients(QByteArray sendData);
 
 private slots:
     void handleNewTcpConnection();
@@ -34,7 +40,9 @@ private slots:
 
 signals:
     void initPlayers(QMap<int, ClientData> clients);
-    void updatePlayers(QMap<int, ClientData> clients);
+    void updateGameMap(QMap<int, ClientData> clients);
+    void updatePlayer(ClientData client);
+    void newLogin(ClientData client);
 
 private:
     QTcpServer *tcpServer;
@@ -43,6 +51,7 @@ private:
     QTimer *updateTimer;
     QMap<int, ClientData> clients;
     bool isGameStarted;
+    int numRemainingPlayers;
 
     void processReceivedData(const QByteArray &data);
 };
