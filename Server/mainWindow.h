@@ -27,6 +27,7 @@ public:
 private slots:
     void setGameMap(QMap<int, ClientData> clients);
     void setPlayerLabel(ClientData data);
+    void setLoginLabel(ClientData data);
     void setAllPlayerLabels(QMap<int, ClientData> clients);
 
 private:

@@ -20,7 +20,7 @@ public:
     explicit Server(QWidget *parent = nullptr);
     ~Server();
     QString getLocalIpAddress();
-    void start(int port);
+    bool start(int port);
     void stop();
     void startGame();
     void stopGame();
@@ -42,6 +42,7 @@ signals:
     void initPlayers(QMap<int, ClientData> clients);
     void updateGameMap(QMap<int, ClientData> clients);
     void updatePlayer(ClientData client);
+    void newLogin(ClientData client);
 
 private:
     QTcpServer *tcpServer;

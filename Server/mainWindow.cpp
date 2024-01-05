@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(server, &Server::initPlayers, this, &MainWindow::setAllPlayerLabels);
     connect(server, &Server::updateGameMap, this, &MainWindow::setGameMap);
     connect(server, &Server::updatePlayer, this, &MainWindow::setPlayerLabel);
+    connect(server, &Server::newLogin, this, &MainWindow::setLoginLabel);
 
     connect(ui->startGameButton, &QPushButton::clicked, this, &MainWindow::startGame);
     connect(ui->stopGameButton, &QPushButton::clicked, this, &MainWindow::stopGame);
@@ -34,7 +35,11 @@ MainWindow::MainWindow(QWidget *parent)
         playerLabels[i].alive = findChild<QLabel *>(aliveLabelName);
     }
 
-    server->start(Constants::SERVER_TCP_PORT);
+    bool serverStatus = server->start(Constants::SERVER_TCP_PORT);
+    if (serverStatus)
+        ui->serverStatusLabel->setText("Server Status: Running");
+    else
+        ui->serverStatusLabel->setText("Server Status: Stopped");
 }
 
 MainWindow::~MainWindow()
@@ -52,6 +57,18 @@ void MainWindow::stopGame()
     server->stopGame();
     clearGameMap();
     clearPlayerLabels();
+}
+
+void MainWindow::setLoginLabel(ClientData data)
+{
+    QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
+    QPixmap image(imagePath);
+    int id = data.id;
+    playerLabels[id].icon->setPixmap(image);
+    playerLabels[id].name->setText(data.name);
+    playerLabels[id].imposter->setText("");
+    playerLabels[id].numTasks->setText("");
+    playerLabels[id].alive->setText("");
 }
 
 void MainWindow::setPlayerLabel(ClientData data)

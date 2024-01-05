@@ -18,19 +18,22 @@ Server::~Server()
 {
 }
 
-void Server::start(int port)
-{   
+bool Server::start(int port)
+{
     if (!tcpServer->listen(QHostAddress::Any, port)) {
         qDebug() << "Server could not start!";
-    } else {
-        qDebug() << "Server started. Listening...";
+        return false;
     }
+
+    qDebug() << "Server started. Listening...";
 
     if (!udpSocket->bind(QHostAddress::Any, Constants::SERVER_UDP_PORT)) {
         qDebug() << "UDP Socket could not bind!";
-    } else {
-        qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
+        return false;
     }
+
+    qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
+    return true;
 }
 
 void Server::stop()
@@ -144,6 +147,7 @@ void Server::handleTcpData(QTcpSocket *socket)
                     clients.insert(clientId, clientData);
 
                     qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                    emit newLogin(clientData);
                 }
                 break;
             case Report:

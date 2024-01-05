@@ -44,6 +44,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="serverStatusLabel">
+      <property name="text">
+       <string>Server Status: </string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QPushButton" name="startGameButton">
       <property name="text">
        <string>Start Game</string>
