@@ -16,7 +16,7 @@ enum Color
 
 enum ActionType
 {
-    Login, GameStarted, GameOver, TaskDone, Killed, Report
+    Login, TaskDone, Killed, Report, GameStarted, GameOver
 };
 
 class Constants {

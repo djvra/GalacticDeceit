@@ -16,8 +16,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(server, &Server::updateGameMap, this, &MainWindow::setGameMap);
     connect(server, &Server::updatePlayer, this, &MainWindow::setPlayerLabel);
 
-    //connect(ui->runButton, &QPushButton::clicked, this, &MainWindow::startServer);
-    //connect(ui->stopButton, &QPushButton::clicked, this, &MainWindow::stopServer);
     connect(ui->startGameButton, &QPushButton::clicked, this, &MainWindow::startGame);
     connect(ui->stopGameButton, &QPushButton::clicked, this, &MainWindow::stopGame);
 
@@ -97,16 +95,19 @@ void MainWindow::setGameMap(QMap<int, ClientData> clients)
             int yStart = 130;
 
             // Add the players
-            for (auto it = clients.begin(); it != clients.end(); ++it) {                
+            for (auto it = clients.begin(); it != clients.end(); ++it) {
                 ClientData data = it.value();
-                PlayerTransform transform = data.playerTransform;
-                // Create and position the player icon
-                QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
-                QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(imagePath));
-                int posX = xStart + transform.x * 11;
-                int posY = yStart + transform.y * -11;
-                playerIcon->setPos(posX, posY);
-                scene->addItem(playerIcon);
+
+                if (data.alive) {
+                    PlayerTransform transform = data.playerTransform;
+                    // Create and position the player icon
+                    QString imagePath = QString(":/assets/images/%1-among-us.png").arg(Constants::colorToString[data.skinColor]);
+                    QGraphicsPixmapItem *playerIcon = new QGraphicsPixmapItem(QPixmap(imagePath));
+                    int posX = xStart + transform.x * 11;
+                    int posY = yStart + transform.y * -11;
+                    playerIcon->setPos(posX, posY);
+                    scene->addItem(playerIcon);
+                }
             }
         }
     }

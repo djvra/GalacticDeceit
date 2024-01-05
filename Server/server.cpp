@@ -125,18 +125,9 @@ void Server::handleTcpData(QTcpSocket *socket)
 
         if (jsonDoc.isObject()) {
             QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-
-            // TODO: REMOVE THIS
-            if (isGameStarted) {
-                for (auto it = clients.begin(); it != clients.end(); ++it) {
-                    ClientData data = it.value();
-                    QTcpSocket* clientTcpSocket = data.tcpSocket;
-                    QByteArray responseData = jsonStr.toUtf8();
-                    clientTcpSocket->write(responseData); // Sending the response back to the client
-                }
-            }
-
             QJsonObject jsonObj = jsonDoc.object();
+            QByteArray responseData = jsonStr.toUtf8();
+
             int actionType = jsonObj["actionType"].toInt();
             int id = jsonObj["id"].toInt();
 
@@ -159,8 +150,11 @@ void Server::handleTcpData(QTcpSocket *socket)
                 // TODO: Not implemented Yet
                 break;
             case Killed:
+                qDebug() << "Killed player: " << id;
                 clients[id].alive = false;
                 --numRemainingPlayers;
+                // Sending the response back to the client
+                sendAllClients(responseData);
                 checkGameStatus();
                 // Notify the desktop application to be able to update the player status labels
                 emit updatePlayer(clients[id]);
