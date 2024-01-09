@@ -8,6 +8,7 @@
 
 #define NUM_PLAYER_TASKS 2
 #define NUM_PLAYERS 6
+#define REPORT_TIMEOUT 1000 * 60 // 60 second (1000 ms = 1 second)
 
 enum Color
 {
@@ -16,7 +17,7 @@ enum Color
 
 enum ActionType
 {
-    Login, TaskDone, Killed, Report, GameStarted, GameOver
+    Login, TaskDone, Killed, Report, Vote, GameStarted, GameOver
 };
 
 class Constants {
@@ -65,6 +66,7 @@ struct PlayerLabels
     QLabel *imposter;
     QLabel *numTasks;
     QLabel *alive;
+    QLabel *voteReceived;
 };
 
 #endif // UTILS_H

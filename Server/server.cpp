@@ -5,13 +5,17 @@ Server::Server(QWidget *parent)
 {
     tcpServer = new QTcpServer(this);
     udpSocket = new QUdpSocket(this);
-    eventTimer = new QTimer(this);
+    reportTimer = new QTimer(this);
     updateTimer = new QTimer(this);
     isGameStarted = false;
     numRemainingPlayers = 0;
+    numRemaningVotes = 0;
 
     connect(tcpServer, &QTcpServer::newConnection, this, &Server::handleNewTcpConnection);
     connect(udpSocket, &QUdpSocket::readyRead, this, &Server::handleUdpDatagrams);
+
+    connect(reportTimer, &QTimer::timeout, this, &Server::handleReport);
+    connect(updateTimer, &QTimer::timeout, this, &Server::sendPlayerData);
 }
 
 Server::~Server()
@@ -38,13 +42,6 @@ bool Server::start(int port)
 
 void Server::stop()
 {
-    // Stop the timers if they are running
-    if (eventTimer && eventTimer->isActive())
-        eventTimer->stop();
-
-    if (updateTimer->isActive())
-        updateTimer->stop();
-
     // Close TCP server
     if (tcpServer && tcpServer->isListening()) {
         tcpServer->close();
@@ -62,6 +59,13 @@ void Server::stop()
 
 void Server::stopGame()
 {
+    // Stop the timers if they are running
+    if (reportTimer->isActive())
+        reportTimer->stop();
+
+    if (updateTimer->isActive())
+        updateTimer->stop();
+
     isGameStarted = false;
     clients.clear();
 }
@@ -82,11 +86,8 @@ void Server::startGame()
     qDebug() << "Game is started.";
 
     // Set up a new timer to send the player informations on each frame
-    if (eventTimer && eventTimer->isActive()) {
-        eventTimer->stop();
-    }
-
-    connect(updateTimer, &QTimer::timeout, this, &Server::sendPlayerData);
+    if (updateTimer && updateTimer->isActive())
+        updateTimer->stop();
 
     // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
     int updateInterval = 100;
@@ -151,7 +152,24 @@ void Server::handleTcpData(QTcpSocket *socket)
                 }
                 break;
             case Report:
+                // Sending the response back to the client
+                sendAllClients(responseData);
+                numRemaningVotes = numRemainingPlayers;
+                // Start timer for voting
+                reportTimer->start(REPORT_TIMEOUT);
+                break;
+            case Vote:
                 // TODO: Not implemented Yet
+                if (collectedVotes.contains(id))
+                    collectedVotes[id] = collectedVotes[id] + 1;
+                else
+                    collectedVotes[id] = 1;
+
+                emit updateVotedPlayer(id, collectedVotes[id]);
+
+                // Check if all the players have voted
+                if (numRemaningVotes == 0)
+                    handleReport();
                 break;
             case Killed:
                 qDebug() << "Killed player: " << id;
@@ -174,7 +192,49 @@ void Server::handleTcpData(QTcpSocket *socket)
     }
 }
 
-QMap<int, ClientData>::iterator Server::findImposter() {
+void Server::handleReport()
+{
+    // Stop the timer in case all the players voted before the timeout
+    if (reportTimer->isActive())
+        reportTimer->stop();
+
+    // Count the votes, select the winner
+    if (collectedVotes.empty())
+        return;
+
+
+    int maxVotes = 0;
+    QList<int> playersWithMaxVotes;
+
+    // Iterate through the QMap to find the player(s) with the maximum number of votes
+    for (auto it = collectedVotes.constBegin(); it != collectedVotes.constEnd(); ++it) {
+        if (it.value() > maxVotes) {
+            maxVotes = it.value();
+            // Clear previous max-vote player(s)
+            playersWithMaxVotes.clear();
+            playersWithMaxVotes.append(it.key());
+        } else if (it.value() == maxVotes) {
+            // If there are multiple players with the same maximum votes, add them to the list
+            playersWithMaxVotes.append(it.key());
+        }
+    }
+
+    if (playersWithMaxVotes.size() == 1) {
+        // Eleminate the player and send the kill signal to all the players
+        QJsonObject jsonObj;
+        jsonObj["actionType"] = Killed;
+        jsonObj["id"] = playersWithMaxVotes[0];
+        QJsonDocument jsonObjDoc(jsonObj);
+        sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
+    }
+
+    collectedVotes.clear();
+
+    emit resetVotes();
+}
+
+QMap<int, ClientData>::iterator Server::findImposter()
+{
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
         if (data.isImposter)

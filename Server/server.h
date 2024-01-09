@@ -37,20 +37,25 @@ private slots:
     void handleUdpDatagrams();
     void sendPlayerStartingInfo();
     void sendPlayerData();
+    void handleReport();
 
 signals:
     void initPlayers(QMap<int, ClientData> clients);
     void updateGameMap(QMap<int, ClientData> clients);
     void updatePlayer(ClientData client);
+    void updateVotedPlayer(int id, int numVotes);
+    void resetVotes();
     void newLogin(ClientData client);
 
 private:
     QTcpServer *tcpServer;
     QUdpSocket *udpSocket;
-    QTimer *eventTimer;
+    QTimer *reportTimer;
     QTimer *updateTimer;
     QMap<int, ClientData> clients;
+    QMap<int, int> collectedVotes;
     bool isGameStarted;
+    int numRemaningVotes;
     int numRemainingPlayers;
 
     void processReceivedData(const QByteArray &data);

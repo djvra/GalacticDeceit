@@ -15,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(server, &Server::initPlayers, this, &MainWindow::setAllPlayerLabels);
     connect(server, &Server::updateGameMap, this, &MainWindow::setGameMap);
     connect(server, &Server::updatePlayer, this, &MainWindow::setPlayerLabel);
+    connect(server, &Server::updateVotedPlayer, this, &MainWindow::setPlayerVotesLabel);
+    connect(server, &Server::resetVotes, this, &MainWindow::resetPlayerVotesLabel);
     connect(server, &Server::newLogin, this, &MainWindow::setLoginLabel);
 
     connect(ui->startGameButton, &QPushButton::clicked, this, &MainWindow::startGame);
@@ -27,12 +29,14 @@ MainWindow::MainWindow(QWidget *parent)
         QString imposterLabelName = QString("p%1imposterLabel").arg(i);
         QString numTasksLabelName = QString("p%1numTasksLabel").arg(i);
         QString aliveLabelName = QString("p%1aliveLabel").arg(i);
+        QString voteLabelName = QString("p%1voteLabel").arg(i);
 
         playerLabels[i].icon = findChild<QLabel *>(iconLabelName);
         playerLabels[i].name = findChild<QLabel *>(nameLabelName);
         playerLabels[i].imposter = findChild<QLabel *>(imposterLabelName);
         playerLabels[i].numTasks = findChild<QLabel *>(numTasksLabelName);
         playerLabels[i].alive = findChild<QLabel *>(aliveLabelName);
+        playerLabels[i].voteReceived = findChild<QLabel *>(voteLabelName);
     }
 
     bool serverStatus = server->start(Constants::SERVER_TCP_PORT);
@@ -69,6 +73,19 @@ void MainWindow::setLoginLabel(ClientData data)
     playerLabels[id].imposter->setText("");
     playerLabels[id].numTasks->setText("");
     playerLabels[id].alive->setText("");
+    playerLabels[id].voteReceived->setText("");
+}
+
+void MainWindow::setPlayerVotesLabel(int id, int numVotes)
+{
+    playerLabels[id].voteReceived->setText(QString::number(numVotes));
+}
+
+void MainWindow::resetPlayerVotesLabel()
+{
+    for (int i = 0; i < NUM_PLAYERS; ++i)
+        playerLabels[i].voteReceived->clear();
+
 }
 
 void MainWindow::setPlayerLabel(ClientData data)
@@ -81,6 +98,7 @@ void MainWindow::setPlayerLabel(ClientData data)
     playerLabels[id].imposter->setText(data.isImposter ? "imposter" : "crewmate");
     playerLabels[id].numTasks->setText(QString::number(data.numRemainingTask));
     playerLabels[id].alive->setText(data.alive ? "alive" : "dead");
+    playerLabels[id].voteReceived->setText("");
 }
 
 void MainWindow::setAllPlayerLabels(QMap<int, ClientData> clients)
@@ -154,6 +172,7 @@ void MainWindow::clearPlayerLabels()
         playerLabels[i].imposter->clear();
         playerLabels[i].numTasks->clear();
         playerLabels[i].alive->clear();
+        playerLabels[i].voteReceived->clear();
     }
 }
 
