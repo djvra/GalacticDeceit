@@ -5,48 +5,43 @@ Server::Server(QWidget *parent)
 {
     tcpServer = new QTcpServer(this);
     udpSocket = new QUdpSocket(this);
-    eventTimer = new QTimer(this);
+    reportTimer = new QTimer(this);
     updateTimer = new QTimer(this);
     isGameStarted = false;
+    numRemainingPlayers = 0;
+    numRemaningVotes = 0;
 
     connect(tcpServer, &QTcpServer::newConnection, this, &Server::handleNewTcpConnection);
     connect(udpSocket, &QUdpSocket::readyRead, this, &Server::handleUdpDatagrams);
+
+    connect(reportTimer, &QTimer::timeout, this, &Server::handleReport);
+    connect(updateTimer, &QTimer::timeout, this, &Server::sendPlayerData);
 }
 
 Server::~Server()
 {
 }
 
-void Server::start(int port)
-{   
+bool Server::start(int port)
+{
     if (!tcpServer->listen(QHostAddress::Any, port)) {
         qDebug() << "Server could not start!";
-    } else {
-        qDebug() << "Server started. Listening...";
+        return false;
     }
+
+    qDebug() << "Server started. Listening...";
 
     if (!udpSocket->bind(QHostAddress::Any, Constants::SERVER_UDP_PORT)) {
         qDebug() << "UDP Socket could not bind!";
-    } else {
-        qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
+        return false;
     }
+
+    qDebug() << "UDP Socket bound to port" << Constants::SERVER_UDP_PORT;
+    return true;
 }
 
 void Server::stop()
 {
-    // Stop the timers if they are running
-    if (eventTimer && eventTimer->isActive()) {
-        eventTimer->stop();
-        delete eventTimer;
-        eventTimer = nullptr;
-    }
-
-    if (updateTimer && updateTimer->isActive()) {
-        updateTimer->stop();
-        delete updateTimer;
-        updateTimer = nullptr;
-    }
-
     // Close TCP server
     if (tcpServer && tcpServer->isListening()) {
         tcpServer->close();
@@ -57,24 +52,42 @@ void Server::stop()
         udpSocket->close();
     }
 
+    stopGame();
+
     qDebug() << "Server stopped.";
+}
+
+void Server::stopGame()
+{
+    // Stop the timers if they are running
+    if (reportTimer->isActive())
+        reportTimer->stop();
+
+    if (updateTimer->isActive())
+        updateTimer->stop();
+
+    isGameStarted = false;
+    clients.clear();
 }
 
 void Server::startGame()
 {
+    if (clients.size() < 1) {
+        qDebug() << "Game couldn't started due to insufficient number of players.";
+        return;
+    }
+
     chooseImposter();
     sendPlayerStartingInfo();
 
     isGameStarted = true;
+    numRemainingPlayers = clients.size();
 
     qDebug() << "Game is started.";
 
     // Set up a new timer to send the player informations on each frame
-    if (eventTimer && eventTimer->isActive()) {
-        eventTimer->stop();
-    }
-
-    connect(updateTimer, &QTimer::timeout, this, &Server::sendPlayerData);
+    if (updateTimer && updateTimer->isActive())
+        updateTimer->stop();
 
     // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
     int updateInterval = 100;
@@ -85,7 +98,7 @@ void Server::chooseImposter()
 {
     // Select the imposter randomly
     int randomIndex = QRandomGenerator::global()->bounded(clients.size());
-    clients[randomIndex].setImposter(true);
+    clients[randomIndex].isImposter = true;
 }
 
 void Server::handleNewTcpConnection()
@@ -115,36 +128,194 @@ void Server::handleTcpData(QTcpSocket *socket)
         }
 
         if (jsonDoc.isObject()) {
-
             QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-            //qDebug() << jsonStr;
-            std::string stdStr = jsonStr.toStdString();
-            qDebug() << stdStr.c_str();
+            QJsonObject jsonObj = jsonDoc.object();
+            qDebug() << "received: " <<jsonObj;
+            QByteArray responseData = jsonStr.toUtf8();
 
-            if (isGameStarted) {
-                for (auto it = clients.begin(); it != clients.end(); ++it) {
-                    ClientData data = it.value();
-                    QTcpSocket* clientTcpSocket = data.getQTcpSocket();
-                    QByteArray responseData = jsonStr.toUtf8();
-                    clientTcpSocket->write(responseData); // Sending the response back to the client
+
+            int actionType = jsonObj["actionType"].toInt();
+            int id = jsonObj["id"].toInt();
+
+            switch (actionType) {
+            case Login:
+                if (!isGameStarted) {
+                    QJsonObject jsonObj = jsonDoc.object();
+                    // Extract data from JSON object
+                    QString clientName = jsonObj["clientName"].toString();
+                    QString clientIp = jsonObj["clientIp"].toString();
+                    int clientId = clients.size();
+
+                    ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket, (Color) clientId);
+                    clients.insert(clientId, clientData);
+
+                    qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                    emit newLogin(clientData);
                 }
-            }
+                break;
+            case Report:
+                // Sending the response back to the client
+                sendAllClients(responseData);
+                numRemaningVotes = numRemainingPlayers;
+                // Start timer for voting
+                reportTimer->start(REPORT_TIMEOUT);
+                break;
+            case Vote:
+                // TODO: Not implemented Yet
+                if (id != -1) {
+                    if (collectedVotes.contains(id))
+                        collectedVotes[id] = collectedVotes[id] + 1;
+                    else
+                        collectedVotes[id] = 1;
 
-            if (!isGameStarted) {
-                QJsonObject jsonObj = jsonDoc.object();
+                    emit updateVotedPlayer(id, collectedVotes[id]);
+                }
 
-                // Extract data from JSON object
-                QString clientName = jsonObj["clientName"].toString();
-                QString clientIp = jsonObj["clientIp"].toString();
-                int clientId = clients.size();
+                --numRemaningVotes;
 
-                ClientData clientData(clientName, QHostAddress(clientIp), clientId, socket, (Color) clientId);
-                clients.insert(clientId, clientData);
+                // Check if all the players have voted
+                if (numRemaningVotes == 0) {
+                    handleReport();
+                }
 
-                qDebug() << "New client login from " << clientIp << ", with nickname" << clientName << ", given client id: " << clientId;
+                break;
+            case Killed:
+                qDebug() << "Killed player: " << id;
+                clients[id].alive = false;
+                --numRemainingPlayers;
+                // Sending the response back to the client
+                sendAllClients(responseData);
+                checkGameStatus();
+                // Notify the desktop application to be able to update the player status labels
+                emit updatePlayer(clients[id]);
+                break;
+            case TaskDone:
+                clients[id].numRemainingTask -= 1;
+                checkGameStatus();
+                break;
+            default:
+                break;
             }
         }
     }
+}
+
+void Server::handleReport()
+{
+    // Stop the timer in case all the players voted before the timeout
+    if (reportTimer->isActive())
+        reportTimer->stop();
+
+    // Count the votes, select the winner
+    /*if (collectedVotes.empty())
+        return;*/
+
+
+
+
+    int maxVotes = 0;
+    QList<int> playersWithMaxVotes;
+
+    // Iterate through the QMap to find the player(s) with the maximum number of votes
+    for (auto it = collectedVotes.constBegin(); it != collectedVotes.constEnd(); ++it) {
+        if (it.value() > maxVotes) {
+            maxVotes = it.value();
+            // Clear previous max-vote player(s)
+            playersWithMaxVotes.clear();
+            playersWithMaxVotes.append(it.key());
+        } else if (it.value() == maxVotes) {
+            // If there are multiple players with the same maximum votes, add them to the list
+            playersWithMaxVotes.append(it.key());
+        }
+    }
+
+    if (playersWithMaxVotes.size() == 1) {
+        int id = playersWithMaxVotes[0];
+        clients[id].alive = false;
+        // Eleminate the player and send the kill signal to all the players
+        QJsonObject jsonObj;
+        jsonObj["actionType"] = Killed;
+        jsonObj["id"] = id;
+        qDebug() << jsonObj;
+        QJsonDocument jsonObjDoc(jsonObj);
+        sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
+    }
+
+    collectedVotes.clear();
+
+    // Send message for come back start position
+    QJsonObject jsonObj;
+    jsonObj["actionType"] = BackStart;
+    jsonObj["id"] = -1;
+    QJsonDocument jsonObjDoc(jsonObj);
+    QTimer::singleShot(1000, [this, jsonObjDoc](){
+        sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
+    });
+
+    qDebug() << jsonObj;
+
+    emit resetVotes();
+
+    checkGameStatus();
+}
+
+QMap<int, ClientData>::iterator Server::findImposter()
+{
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        ClientData data = it.value();
+        if (data.isImposter)
+            return it; // Return the iterator if imposter is found
+    }
+    return clients.end(); // Return the end iterator if imposter is not found
+}
+
+void Server::checkGameStatus()
+{
+    // TODO: Revisite the finishing conditions
+    if (isGameOver()) {
+        int winner;
+        if (isImposterAlive()) {
+            qDebug() << "Game is over. Imposter win!";
+            winner = 0;
+        }
+        else {
+            qDebug() << "Game is over. Crewmate win!";
+            winner = 1;
+        }
+
+        QJsonObject responseObj;
+        responseObj["actionType"] = GameOver;
+        responseObj["id"] = winner;
+        qDebug() << responseObj;
+        QJsonDocument responseDoc(responseObj);
+        QTimer::singleShot(3000, [this, responseDoc](){
+            sendAllClients(responseDoc.toJson(QJsonDocument::Compact));
+        });
+
+
+
+        // TODO-NEXT: Clear clients map, set isGameStarted as false
+    }
+}
+
+bool Server::isImposterAlive()
+{
+    QMap<int, ClientData>::iterator imposter = findImposter();
+    return imposter != clients.end() && imposter.value().alive;
+}
+
+bool Server::isGameOver()
+{
+    if (numRemainingPlayers <= 2 || !isImposterAlive())
+        return true;
+
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        ClientData data = it.value();
+        if (data.numRemainingTask > 0 && !data.isImposter)
+            return false;
+    }
+
+    return true;
 }
 
 void Server::handleUdpDatagrams()
@@ -170,50 +341,52 @@ void Server::processReceivedData(const QByteArray &data)
     if (jsonDoc.isObject()) {
         QJsonObject jsonObj = jsonDoc.object();
 
-        /*QString jsonStr = jsonDoc.toJson(QJsonDocument::Indented);
-        //qDebug() << jsonStr;
-        std::string stdStr = jsonStr.toStdString();
-        qDebug() << stdStr.c_str();*/
-
         // Extract data from JSON object
         int clientId = jsonObj["clientId"].toInt();
         QJsonObject jsonPosition = jsonObj["position"].toObject();
         float x = jsonPosition.value("x").toDouble();
         float y = jsonPosition.value("y").toDouble();
         int packetCounter = jsonObj["packetCounter"].toInt();
-        //qDebug() << "packetCounter: " << packetCounter;
 
         if (clients.contains(clientId)) {
             ClientData &data = clients[clientId];
 
-            if (data.getPacketCounter() < packetCounter) {
+            if (data.packetCounter < packetCounter) {
                 // Update client data fields as needed
-                data.setPacketCounter(packetCounter);
-                data.setPlayerTransform(PlayerTransform(x, y, true));
+                data.packetCounter = packetCounter;
+                data.playerTransform = PlayerTransform(x, y, true);
             }
         }
     }
 }
 
+void Server::sendAllClients(QByteArray sendData)
+{
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        QTcpSocket* clientTcpSocket = it.value().tcpSocket;
+        clientTcpSocket->write(sendData);
+    }
+}
+
 void Server::sendPlayerStartingInfo()
 {
-    qDebug() << "Send player IDs and imposter information.";
-
     // Send serialized JSON data to each client
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
-        QTcpSocket* clientTcpSocket = data.getQTcpSocket();
+        QTcpSocket* clientTcpSocket = data.tcpSocket;
 
         // Serialize client id and imposter information to JSON
         QJsonObject responseObj;
-        responseObj["id"] = data.getId();
-        responseObj["imposter"] = data.getImposter();
-        responseObj["color"] = data.getSkinColor();
+        responseObj["actionType"] = GameStarted;
+        responseObj["id"] = data.id;
+        responseObj["imposter"] = data.isImposter;
+        responseObj["color"] = data.skinColor;
+        responseObj["numRemainingTask"] = data.numRemainingTask;
 
         QJsonDocument responseDoc(responseObj);
         QByteArray responseData = responseDoc.toJson(QJsonDocument::Compact);
 
-        clientTcpSocket->write(responseData); // Sending the response back to the client
+        clientTcpSocket->write(responseData);
     }
     emit initPlayers(clients);
 }
@@ -225,14 +398,15 @@ void Server::sendPlayerData()
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         int clientId = it.key();
         ClientData data = it.value();
-        PlayerTransform playerTransform = data.getPlayerTransform();
+        PlayerTransform playerTransform = data.playerTransform;
         QJsonObject positionObject;
-        positionObject["x"] = playerTransform.getX();
-        positionObject["y"] = playerTransform.getY();
+        positionObject["x"] = playerTransform.x;
+        positionObject["y"] = playerTransform.y;
         positionObject["z"] = 0;
         QJsonObject dataObject;
         dataObject["position"] = positionObject;
-        dataObject["color"] = data.getSkinColor();
+        dataObject["color"] = data.skinColor;
+        dataObject["name"] = data.name;
         clientsDataObject[QString::number(clientId)] = dataObject;
     }
 
@@ -240,17 +414,16 @@ void Server::sendPlayerData()
     QByteArray payload = doc.toJson();
 
     // Send serialized JSON data to each client // ayni bilgisayarda test icin
-    int portNumber = Constants::CLIENT_UDP_PORT;
+    int portNumberTest = Constants::CLIENT_UDP_PORT;
     for (auto it = clients.begin(); it != clients.end(); ++it) {
-        QHostAddress clientIp = it.value().getIpAddress();
-        //qDebug() << clientIp;
-        //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
+        QHostAddress clientIp = it.value().ip;
 
+        //udpSocket->writeDatagram(payload, clientIp, Constants::CLIENT_UDP_PORT);
         // ayni bilgisayarda test etmek icin yazdim, normalde usttekini kullanacagiz
-        udpSocket->writeDatagram(payload, clientIp, portNumber++);
+        udpSocket->writeDatagram(payload, clientIp, portNumberTest++);
     }
 
-    emit updatePlayers(clients);
+    emit updateGameMap(clients);
 }
 
 QString Server::getLocalIpAddress()

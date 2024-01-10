@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Android;
 using System;
+using UnityEngine.UI;
 
 public class BluetoothPlayerMovement : MonoBehaviour
 {
@@ -11,7 +12,7 @@ public class BluetoothPlayerMovement : MonoBehaviour
     public string joystickData;
 
     // Predefined device name
-    public string deviceName = "HC-05";
+    //private string deviceName; // = "HC-05";
     private bool IsConnected;
     public string sampleData;
     Vector3 force;
@@ -22,6 +23,7 @@ public class BluetoothPlayerMovement : MonoBehaviour
     private AU_PlayerController playerController;
     private Animator playerAnimator;
     Vector3 movementVector;
+    public string deviceName = null;
 
     void Start()
     {
@@ -48,9 +50,9 @@ public class BluetoothPlayerMovement : MonoBehaviour
         playerAnimator = playerGO.GetComponent<Animator>();
 
         IsConnected = false;
-        BluetoothService.CreateBluetoothObject();
+        
 
-        IsConnected = BluetoothService.StartBluetoothConnection(deviceName);
+        //IsConnected = BluetoothService.StartBluetoothConnection(deviceName);
 
         oldX = 511;
         oldY = 511;
@@ -58,102 +60,133 @@ public class BluetoothPlayerMovement : MonoBehaviour
 
     }
 
+    /*public void Connect(string deviceName)
+    {
+        if (deviceName != null && deviceName != "")
+        {
+            deviceName = deviceName.Trim();
+            Debug.Log("deviceName ->" + deviceName.ToString());
+
+            BluetoothService.CreateBluetoothObject();
+            IsConnected = BluetoothService.StartBluetoothConnection(deviceName);
+            Debug.Log("Connect IsConnected ->" + IsConnected.ToString());
+
+            
+        }
+    }*/
+
     void FixedUpdate()
     {
-        if (!playerController.isMoving)
+        if (deviceName != null && deviceName != "")
         {
-            joystickData = "";
-            if (IsConnected)
+            if (!IsConnected) {
+                deviceName = deviceName.Trim();
+                Debug.Log("deviceName ->" + deviceName.ToString());
+
+                BluetoothService.CreateBluetoothObject();
+                IsConnected = BluetoothService.StartBluetoothConnection(deviceName);
+                Debug.Log("FixedUpdate IsConnected ->" + IsConnected.ToString());
+            }
+
+            if (!playerController.isMoving)
             {
-                try
+
+                joystickData = "";
+                if (IsConnected)
                 {
-                    string datain = BluetoothService.ReadFromBluetooth();
-                    if (datain.Length > 1)
+                    try
                     {
-                        joystickData = datain;
-                        //print(joystickData);
+                        string datain = BluetoothService.ReadFromBluetooth();
+                        if (datain.Length > 1)
+                        {
+                            joystickData = datain;
+                            //print(joystickData);
+                        }
+
                     }
-
+                    catch (Exception e)
+                    {
+                        BluetoothService.Toast("Error in connection");
+                    }
                 }
-                catch (Exception e)
+
+
+                //sampleData = "0?1?1?0?0?1?1?1?1?88?88?88?";
+
+                int[] tempParsedInputs = ParseJoystickData(joystickData);
+
+                //Debug.Log("joystickdata ->" + joystickData.ToString());
+
+                if(tempParsedInputs.Length < 9)
                 {
-                    BluetoothService.Toast("Error in connection");
+                    Debug.Log("Error on came input!");
+                }
+
+                int analogX = tempParsedInputs[7];
+                int analogY = tempParsedInputs[8];
+                bool killOrDoTaskButton = tempParsedInputs[2] == 1 ? false : true;
+                bool reportButton = tempParsedInputs[1] == 1 ? false : true;
+
+                if (killOrDoTaskButton)
+                {
+                    playerController.KillOrDoTask();
+                }
+                
+                if (reportButton)
+                {
+                    Debug.Log("report button pressed");
+                }
+                //Debug.Log("analogX ->" + analogX.ToString());
+                //Debug.Log("analogY ->" + analogY.ToString());
+
+                if (analogX == 512 && analogY == 512)
+                {
+                    analogX = oldX;
+                    analogY = oldY;
+
+                    //Debug.Log("if 512 analogX ->" + analogX.ToString());
+                    //Debug.Log("if 512 analogY ->" + analogY.ToString());
+                }
+                else
+                {
+                    oldX = analogX;
+                    oldY = analogY;
+                }
+
+                force = Vector3.zero;
+
+                if (analogX < 300)
+                {
+                    force += Vector3.left;
+                }
+                if (analogX > 800)
+                {
+                    force += Vector3.right;
+                }
+                if (analogY < 300)
+                {
+                    force += Vector3.down;
+                }
+                if (analogY > 800)
+                {
+                    force += Vector3.up;
+                }
+
+                if (force.magnitude == 0)
+                {
+                    rb.velocity = Vector3.zero;
+                }
+                else
+                {
+                    movementVector = force * movementSensitivity;
+                    rb.velocity = movementVector;
+                    //Debug.Log("rb.velocity.magnitude ->" + rb.velocity.magnitude.ToString());
                 }
             }
 
 
-            //sampleData = "0?1?1?0?0?1?1?1?1?88?88?88?";
-
-            int[] tempParsedInputs = ParseJoystickData(joystickData);
-
-            //Debug.Log("joystickdata ->" + joystickData.ToString());
-
-            if(tempParsedInputs.Length < 9)
-            {
-                Debug.Log("Error on came input!");
-            }
-
-            int analogX = tempParsedInputs[7];
-            int analogY = tempParsedInputs[8];
-            bool killButton = tempParsedInputs[2] == 1 ? false : true;
-            bool reportButton = tempParsedInputs[1] == 1 ? false : true;
-
-            if (killButton)
-            {
-                playerController.KillTarget(killButton);
-            }
-            
-            if (reportButton)
-            {
-                Debug.Log("report button pressed");
-            }
-            //Debug.Log("analogX ->" + analogX.ToString());
-            //Debug.Log("analogY ->" + analogY.ToString());
-
-            if (analogX == 512 && analogY == 512)
-            {
-                analogX = oldX;
-                analogY = oldY;
-
-                //Debug.Log("if 512 analogX ->" + analogX.ToString());
-                //Debug.Log("if 512 analogY ->" + analogY.ToString());
-            }
-            else
-            {
-                oldX = analogX;
-                oldY = analogY;
-            }
-
-            force = Vector3.zero;
-
-            if (analogX < 500)
-            {
-                force += Vector3.left;
-            }
-            if (analogX > 540)
-            {
-                force += Vector3.right;
-            }
-            if (analogY < 500)
-            {
-                force += Vector3.down;
-            }
-            if (analogY > 540)
-            {
-                force += Vector3.up;
-            }
-
-            if (force.magnitude == 0)
-            {
-                rb.velocity = Vector3.zero;
-            }
-            else
-            {
-                movementVector = force * movementSensitivity;
-                rb.velocity = movementVector;
-                //Debug.Log("rb.velocity.magnitude ->" + rb.velocity.magnitude.ToString());
-            }
         }
+
 
     }
 
@@ -197,16 +230,19 @@ public class BluetoothPlayerMovement : MonoBehaviour
         {
             string[] parts = data.Split(new char[] { '?' }, System.StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < 9; i++)
+            if (parts.Length == 9)
             {
-                if (int.TryParse(parts[i], out int value))
+                for (int i = 0; i < 9; i++)
                 {
-                    integers[i] = value;
-                }
-                else
-                {
-                    Debug.LogWarning("Failed to parse: " + parts[i]);
-                    // Handle parsing failure if needed
+                    if (int.TryParse(parts[i], out int value))
+                    {
+                        integers[i] = value;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Failed to parse: " + parts[i]);
+                        // Handle parsing failure if needed
+                    }
                 }
             }
 

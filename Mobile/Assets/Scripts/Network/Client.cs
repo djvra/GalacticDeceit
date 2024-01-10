@@ -7,16 +7,28 @@ using UnityEngine.UI;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class Client : MonoBehaviour
 {
     // UI
     public InputField userInput;
     public InputField ipInput;
+    public InputField deviceInput;
     public GameObject loginForm;
+    public Canvas canvas2;
+    public GameObject votingForm;
+    public GameObject UIControls;
+    public Canvas UIControlsCanvas;
     public TMPro.TextMeshProUGUI infoText;
     public TMPro.TextMeshProUGUI killCooldownText;
     public GameObject TimerGO;
+    public TMPro.TMP_Dropdown devicesDropdown;
+    private bool infoTextUpdated = false;
+    public TMPro.TextMeshProUGUI gameEndText;
+    public GameObject GameEndGo;
+    private bool GameEndTextActive = false;
 
     // Network
     public string server;
@@ -35,33 +47,57 @@ public class Client : MonoBehaviour
     private bool imposter;
     private Dictionary<int, ClientTransform> otherClientsData;
     private ConcurrentDictionary<int, GameObject> otherClientsObjects;
+    public ConcurrentDictionary<int, ClientTransform> otherPlayersData;
     private float lerpSpeed = 5f;
-    private static Color purple = new Color(166f/255f, 60f/255f, 176f/255f);
-    private Color[] colors = { Color.red, Color.white, Color.green, Color.cyan, purple, Color.yellow };
+    public static bool reportInProgress = false;
+    private Vector3 UIControlsPosition;
+
     private ConcurrentQueue<object> outgoingData = new ConcurrentQueue<object>();
-    private int? _killedPlayerId;
-    private int? killedPlayerId
+    private int? _votedPlayerId;
+    private int? _reportedPlayerId;
+
+    private int? reportedPlayerId
     {
-        get { return _killedPlayerId; }
+        get { return _reportedPlayerId; }
         set
         {
-            if (_killedPlayerId != value)
+            if (_reportedPlayerId != value)
             {
-                _killedPlayerId = value;                
-                object wrapper = new { actionType = "kill", id = _killedPlayerId };
+                Debug.Log("Sending reported id");
+                _reportedPlayerId = value;                
+                object wrapper = new { actionType = Utils.ActionType.Report, id = _reportedPlayerId };
                 outgoingData.Enqueue(wrapper);
                 Task.Run(() => SendTcpComm());
             }
         }
     }
 
+    /*private int? votedPlayerId
+    {
+        get { return _votedPlayerId; }
+        set
+        {
+            if (_reportedPlayerId != value)
+            {
+                Debug.Log("Sending voted id");
+                _votedPlayerId = value;                
+                object wrapper = new { actionType = Utils.ActionType.Voted, id = _votedPlayerId };
+                outgoingData.Enqueue(wrapper);
+                Task.Run(() => SendTcpComm());
+            }
+        }
+    }*/
+
     private void Awake()
     {
+        votingForm.SetActive(false);
+        canvas2.gameObject.SetActive(false);
         udpClient = new UdpClient();
         udpCounter = 0;
         udpServer = new UdpServer(UdpReceived);
         otherClientsData = new Dictionary<int, ClientTransform>();
         otherClientsObjects = new ConcurrentDictionary<int, GameObject>();
+        otherPlayersData = new ConcurrentDictionary<int, ClientTransform>();
     }
 
     private void OnDestroy()
@@ -80,43 +116,124 @@ public class Client : MonoBehaviour
 
     private void HandleAction(Action action)
     {
-        Debug.Log($"Size of otherClientsObjects: {otherClientsObjects.Count}");
+        //Debug.Log($"Size of otherClientsObjects: {otherClientsObjects.Count}");
 
-        foreach (var pair in otherClientsObjects)
+        /*foreach (var pair in otherClientsObjects)
         {
             Debug.Log($"Key: {pair.Key}, Value: {pair.Value}");
-        }
+        }*/
 
         //Debug.Log($"Action received: {action.actionType}");
         //Debug.Log($"Action received: {action.id}");
-        string type = action.actionType.Trim().ToLower();
-        if (type == "kill")
+
+        Utils.ActionType actionType = action.actionType;
+
+        // KILL
+        if (actionType == Utils.ActionType.Killed)
         {   
-            Debug.Log($"Player {action.id} was killed!");
+            KillPlayer(action.id);
+            UpdateInfoText();
+        }
+        
+        // REPORT
+        else if (actionType == Utils.ActionType.Report)
+        {
+            Debug.Log($"Player {action.id} was reported!");
             
-            if (action.id == id)
+            if (!playerController.isDead)
+            {                
+                //playerController.reportingInProgress = true;
+                reportInProgress = true;
+
+                votingForm.SetActive(true);
+                canvas2.gameObject.SetActive(true);
+                Debug.Log("bbbbbbbbbbbb");
+
+                if (votingForm.GetComponentInChildren<VotingListControl>().time <= 0f)
+                {
+                    int voted;
+                    if(!int.TryParse(votingForm.GetComponentInChildren<VotingListControl>().VotedPlayer.text.ToString(), out voted)){
+                        voted = -1;
+                    }
+                    Debug.Log("Voting screen: Voted player: " + voted);
+
+                    if (voted != -1)
+                    {
+                        //playerController.OnPlayerVoted.Invoke(voted);
+
+                    }
+                }
+
+                reportInProgress = false;
+                
+                Debug.Log("ssssssssssssssss");
+                //playerController.reportingInProgress = false;
+            }
+            else{
+                Debug.Log("I was dead!");
+            }
+
+            
+            
+            // set character sprite to invisible
+            //Destroy(otherClientsObjects[action.id]); 
+        }
+
+        /*else if (actionType == Utils.ActionType.VoteKill)
+        {
+            Debug.Log("VoteKill: " + action.id);
+            KillPlayer(action.id);
+        }*/
+
+        else if (actionType == Utils.ActionType.BackStart)
+        {
+            player.transform.position = Vector3.zero;
+        }
+
+        else if (actionType == Utils.ActionType.GameOver )
+        {
+            Debug.Log("GameEnd: " + action.id);
+            
+            if (action.id == 0) 
+            {
+                gameEndText.text = "Imposter \nWin!";
+            }
+            else
+            {
+                gameEndText.text = "Crewmates \nWin!";
+            }
+
+            GameEndTextActive = true;
+        }
+    }
+
+    private void KillPlayer(int playerId)
+    {
+        Debug.Log($"Player {playerId} was killed!");
+            
+            if (playerId == id)
             {
                 Debug.Log("I was killed!");
                 player.GetComponent<AU_PlayerController>().Die();
                 return;
             }
 
-            AU_PlayerController otherPlayerController = otherClientsObjects[action.id].GetComponent<AU_PlayerController>();
+            AU_PlayerController otherPlayerController = otherClientsObjects[playerId].GetComponent<AU_PlayerController>();
             otherPlayerController.Die();
 
             // set character sprite to invisible
-            Transform sprite = otherClientsObjects[action.id].transform.GetChild(0);
-            if (action.id != id) // if i m not the dead player
+            Transform sprite = otherClientsObjects[playerId].transform.GetChild(0);
+            if (playerId != id) // if i m not the dead player
             {
                 SpriteRenderer myAvatarSprite = sprite.GetComponent<SpriteRenderer>();
                 myAvatarSprite.color = Color.clear;
             }
 
+            otherPlayersData.Remove(playerId ,out var ignore);
+
             Transform part = sprite.transform.GetChild(0);
             SpriteRenderer myPartSprite = part.GetComponent<SpriteRenderer>();
             myPartSprite.color = Color.clear;
-
-        }
     }
 
     public async Task ListenTcpComm()
@@ -132,6 +249,7 @@ public class Client : MonoBehaviour
 
                 var responsePayload = Utils.ReadData(tcpStream);
                 var jsonResponse = Encoding.ASCII.GetString(responsePayload);
+                Debug.Log("tcp json response" + jsonResponse);
 
                 if (jsonResponse.Length > 0)
                 {
@@ -190,9 +308,12 @@ public class Client : MonoBehaviour
 
     public void OnLoginPress()
     {
+        server = ipInput.text;
+        string deviceName = devicesDropdown.options[devicesDropdown.value].text;
+
         Debug.Log($"User input: {userInput.text}");
         Debug.Log($"Server input: {ipInput.text}");
-        server = ipInput.text;
+        Debug.Log($"Device input: {deviceName}");
 
         tcpClient = new TcpClient(server, Utils.SERVER_TCP_PORT);
         tcpStream = tcpClient.GetStream();
@@ -218,16 +339,53 @@ public class Client : MonoBehaviour
             Debug.Log("Game is already started!");
         }
 
-
         player = Instantiate(playerPrefab);
-        changePlayerColor(player, colors[response.color]);
-        playerController = player.GetComponent<AU_PlayerController>();
-        playerController.isImposter = response.imposter;
-        playerController.OnPlayerKilled.AddListener(HandlePlayerKilled);
+        changePlayerColor(player, Utils.colors[response.color]);
 
+        playerController = player.GetComponent<AU_PlayerController>();
+        playerController.setDeviceName(deviceName == "None" ? "" : deviceName);
+        playerController.isImposter = response.imposter;
+        playerController.id = response.id;
+        playerController.isLocalPlayer = true;
+        playerController.SetName(userInput.text);
+        //Debug.Log("numRemainingTask: " + response.numRemainingTask);
+
+        // create a list that containts numRemainingTask number of ints
+        // each int is a taskID, task ids are between 0-21 and they are unique
+        if ( ! playerController.isImposter)
+        {
+            playerController.taskIDs = Enumerable.Range(0, response.numRemainingTask)
+                .Select(_ => UnityEngine.Random.Range(0, 21))
+                .Distinct()
+                .ToList();
+        }
+
+        // fill list by hand
+        /*playerController.taskIDs = new List<int>();
+        playerController.taskIDs.Add(0);
+        playerController.taskIDs.Add(15);
+        playerController.taskIDs.Add(9);*/
+
+        playerController.initializeTaskPointers();
+        
+        playerController.OnPlayerKilled.AddListener(HandlePlayerKilled);
+        playerController.OnPlayerReported.AddListener(HandlePlayerReported);
+        //OnPlayerVoted.AddListener(HandlePlayerVoted);
+        playerController.OnPlayerDoneTask.AddListener(HandlePlayerDoneTask);
+
+        VotingListControl votingListControl = votingForm.GetComponentInChildren<VotingListControl>();
+        votingListControl.OnPlayerVoted.AddListener(HandlePlayerVoted);
+        
         if (imposter) TimerGO.SetActive(true);
         loginForm.SetActive(false);
-        infoText.text = $"id: {response.id} \nimposter: {response.imposter} \n ";
+        UIControls.SetActive(true);
+        UIControlsPosition = UIControls.transform.position;
+
+        Debug.Log("UIControlsPosition:");
+        Debug.Log(UIControls.transform.position.x + " " + UIControls.transform.position.y + " " + UIControls.transform.position.z);
+
+
+        UpdateInfoText();
 
         //udpServer.Start(Utils.CLIENT_UDP_PORT);
         // ayni bilgisayarda test etmek icin bunu kullanacagiz sonra silinecek
@@ -238,8 +396,31 @@ public class Client : MonoBehaviour
 
     private void HandlePlayerKilled(int killedPlayerId)
     {
-        // Store the killed player's ID
-        this.killedPlayerId = killedPlayerId;
+        object wrapper = new { actionType = Utils.ActionType.Killed, id = killedPlayerId };
+        outgoingData.Enqueue(wrapper);
+        Task.Run(() => SendTcpComm());
+        UpdateInfoText();
+    }
+
+    private void HandlePlayerReported(int reportedPlayerId)
+    {
+        // Store the reported player's ID
+        this.reportedPlayerId = reportedPlayerId;
+    }
+    private void HandlePlayerVoted(int votedPlayerId)
+    {
+        Debug.Log("Sending voted id in handle player voted");
+        object wrapper = new { actionType = Utils.ActionType.Voted, id = votedPlayerId };
+        outgoingData.Enqueue(wrapper);
+        Task.Run(() => SendTcpComm());
+    }
+
+    private void HandlePlayerDoneTask(int taskDonePlayerId)
+    {
+        object wrapper = new { actionType = Utils.ActionType.TaskDone, id = taskDonePlayerId};
+        outgoingData.Enqueue(wrapper);
+        Task.Run(() => SendTcpComm());
+        UpdateInfoText();
     }
 
     private void Update()
@@ -247,6 +428,17 @@ public class Client : MonoBehaviour
         if (imposter)
         {
             killCooldownText.text = $"Kill Cooldown: {playerController.GetKillCooldownTimer()}";
+        }
+
+        if (infoTextUpdated)
+        {
+            UpdateInfoText();
+            infoTextUpdated = false;
+        }
+
+        if (GameEndTextActive)
+        {
+            GameEndGo.SetActive(true);
         }
 
         if (player != null)
@@ -259,12 +451,25 @@ public class Client : MonoBehaviour
             var jsonRequest = JsonUtility.ToJson(playerData);
             var requestPayload = Encoding.ASCII.GetBytes(jsonRequest);
             udpClient.Send(requestPayload, requestPayload.Length, server, Utils.SERVER_UDP_PORT);
+
+            bool fillPlayerData = false;
+            if (otherPlayersData.IsEmpty)
+            {
+                fillPlayerData = true;
+            }
             
             foreach (var clientData in otherClientsData)
             {   
                 if (clientData.Key != id)
                 {
                     GameObject clientGo;
+
+                    if (fillPlayerData)
+                    {
+                        Debug.Log($"Filling player data: {clientData.Key}");
+                        otherPlayersData.TryAdd(clientData.Key,clientData.Value);
+                        Debug.Log("Update client name: " + clientData.Value.name);
+                    }
 
                     // if client does not exist, create it
                     if (!otherClientsObjects.TryGetValue(clientData.Key, out clientGo))
@@ -287,8 +492,13 @@ public class Client : MonoBehaviour
                         {
                             otherPlayerController.id = clientData.Key;
                             otherPlayerController.OnPlayerKilled.AddListener(HandlePlayerKilled);
-                            changePlayerColor(clientGo, colors[clientData.Value.color]);
+                            otherPlayerController.OnPlayerReported.AddListener(HandlePlayerReported);
+                            //playerController.OnPlayerVoted.AddListener(HandlePlayerVoted);
+                            changePlayerColor(clientGo, Utils.colors[clientData.Value.color]);
+                            otherPlayerController.SetName(clientData.Value.name);
                         }
+
+                        UpdateInfoText();
                     }
                     
                     var clientGoTransform = clientGo.transform;
@@ -317,7 +527,39 @@ public class Client : MonoBehaviour
                     Debug.Log($"Position {clientGoTransform.position}");*/
                 }
             }
+            fillPlayerData = false;
         }
+    }
+
+    private void FixedUpdate()
+    {
+        /*if ( ! reportInProgress && UIControlsPosition != null)
+        {   
+            UIControls.transform.position = UIControlsPosition;
+            Debug.Log(UIControls.transform.position.x + " " + UIControls.transform.position.y + " " + UIControls.transform.position.z);
+            
+        } else {
+            UIControls.transform.position = new Vector3(-5000, -5000, 0);
+        }*/
+        
+                //Debug.Log(tempPosition.x + " " + tempPosition.y + " " + tempPosition.z);
+
+                /* -523.2076 229.2329 -2.177725 */
+
+        if ( ! reportInProgress)
+        {   
+            CanvasGroup canvasGroup = UIControls.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 1f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;  
+        } else {
+            CanvasGroup canvasGroup = UIControls.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+                
+
     }
 
     private void changePlayerColor(GameObject go, Color color)
@@ -325,5 +567,19 @@ public class Client : MonoBehaviour
         Transform avatar = go.transform.GetChild(0);
         SpriteRenderer avatarSprite = avatar.GetComponent<SpriteRenderer>();
         avatarSprite.color = color;
+    }
+
+    private void UpdateInfoText()
+    {
+        string role = playerController.isImposter ? "Imposter" : "Crewmate";
+
+        if ( ! playerController.isImposter) {
+            string taskIDsString = string.Join(", ", playerController.taskIDs.ToArray());
+            infoText.text = $"id: {playerController.id} \nrole: {role} \ntasks: {taskIDsString} ";
+        } else {
+            infoText.text = $"id: {playerController.id} \nrole: {role} \nremaining: {otherPlayersData.Count}";
+        }
+
+        infoTextUpdated = true;
     }
 }

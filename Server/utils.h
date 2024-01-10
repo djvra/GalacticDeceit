@@ -6,33 +6,35 @@
 #include <QTcpSocket>
 #include <QLabel>
 
-class Constants {
-public:
-    static const int SERVER_TCP_PORT = 9000;
-    static const int SERVER_UDP_PORT = 9001;
-    static const int CLIENT_UDP_PORT = 9002;
-};
+#define NUM_PLAYER_TASKS 2
+#define NUM_PLAYERS 6
+#define REPORT_TIMEOUT 1000 * 30 // 60 second (1000 ms = 1 second)
 
 enum Color
 {
     Red, White, Green, Blue, Purple, Yellow
 };
 
+enum ActionType
+{
+    Login, TaskDone, Killed, Report, Vote, GameStarted, GameOver, VoteKill, BackStart
+};
+
+class Constants {
+public:
+    static const int SERVER_TCP_PORT = 9000;
+    static const int SERVER_UDP_PORT = 9001;
+    static const int CLIENT_UDP_PORT = 9002;
+
+    // Map enum values to icon file representations
+    static QMap<Color, QString> colorToString;
+};
+
 class PlayerTransform
 {
 public:
     PlayerTransform(float x, float y, bool isLive);
-    ~PlayerTransform();
 
-    float getX();
-    void setX(float x);
-
-    float getY();
-    void setY(float y);
-
-    bool getLive();
-
-private:
     float x;
     float y;
     bool isLive;
@@ -43,33 +45,7 @@ class ClientData
 public:
     ClientData(QString name, QHostAddress ip, int id, QTcpSocket *socket, Color skinColor);
     ClientData();
-    ~ClientData();
 
-    QString getName();
-    void setName(QString name);
-
-    int getPacketCounter();
-    void setPacketCounter(int counter);
-
-    QHostAddress getIpAddress();
-    void setIpAddress(QHostAddress ip);
-
-    PlayerTransform getPlayerTransform();
-    void setPlayerTransform(PlayerTransform transform);
-
-    QTcpSocket* getQTcpSocket();
-    void setQTcpSocket(QTcpSocket *socket);
-
-    int getId();
-    void setId(int id);
-
-    bool getImposter();
-    void setImposter(bool isImposter);
-
-    Color getSkinColor();
-    void setSkinColor(Color skinColor);
-
-private:
     QString name;
     QHostAddress ip;
     int id;
@@ -78,21 +54,19 @@ private:
     QTcpSocket *tcpSocket;
     bool isImposter;
     Color skinColor;
+    int numRemainingTask;
+    bool alive;
 };
 
-struct LoginRequest
-{
-    QString clientName;
-    QString clientIp;
-
-    LoginRequest(const QString& name) : clientName(name), clientIp("123") {}
-};
 
 struct PlayerLabels
 {
     QLabel *name;
     QLabel *icon;
     QLabel *imposter;
+    QLabel *numTasks;
+    QLabel *alive;
+    QLabel *voteReceived;
 };
 
 #endif // UTILS_H
