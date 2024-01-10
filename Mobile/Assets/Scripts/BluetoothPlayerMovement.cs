@@ -13,7 +13,7 @@ public class BluetoothPlayerMovement : MonoBehaviour
 
     // Predefined device name
     //private string deviceName; // = "HC-05";
-    private bool IsConnected;
+    public static bool IsConnected;
     public string sampleData;
     Vector3 force;
     private float movementSensitivity = 5f;
@@ -91,7 +91,7 @@ public class BluetoothPlayerMovement : MonoBehaviour
             if (!playerController.isMoving)
             {
 
-                joystickData = "";
+                //joystickData = "";
                 if (IsConnected)
                 {
                     try
@@ -115,7 +115,7 @@ public class BluetoothPlayerMovement : MonoBehaviour
 
                 int[] tempParsedInputs = ParseJoystickData(joystickData);
 
-                //Debug.Log("joystickdata ->" + joystickData.ToString());
+                Debug.Log("joystickdata ->" + joystickData.ToString());
 
                 if(tempParsedInputs.Length < 9)
                 {
@@ -134,12 +134,12 @@ public class BluetoothPlayerMovement : MonoBehaviour
                 
                 if (reportButton)
                 {
-                    Debug.Log("report button pressed");
+                    playerController.ReportBody();
                 }
                 //Debug.Log("analogX ->" + analogX.ToString());
                 //Debug.Log("analogY ->" + analogY.ToString());
 
-                if (analogX == 512 && analogY == 512)
+                /*if (analogX == 512 && analogY == 512)
                 {
                     analogX = oldX;
                     analogY = oldY;
@@ -151,23 +151,23 @@ public class BluetoothPlayerMovement : MonoBehaviour
                 {
                     oldX = analogX;
                     oldY = analogY;
-                }
+                }*/
 
                 force = Vector3.zero;
 
-                if (analogX < 300)
+                if (analogX < 200)
                 {
                     force += Vector3.left;
                 }
-                if (analogX > 800)
+                if (analogX > 500)
                 {
                     force += Vector3.right;
                 }
-                if (analogY < 300)
+                if (analogY < 200)
                 {
                     force += Vector3.down;
                 }
-                if (analogY > 800)
+                if (analogY > 500)
                 {
                     force += Vector3.up;
                 }
@@ -205,6 +205,9 @@ public class BluetoothPlayerMovement : MonoBehaviour
                 {
                     Transform playerAvatar = playerGO.transform;
                     playerAvatar.localScale = new Vector3(Mathf.Sign(force.x), 1, 1);
+
+                    Transform playerName = playerAvatar.GetChild(3);
+                    playerName.localScale = new Vector3(Mathf.Sign(force.x), 1, 1);
                 }
             }
         }

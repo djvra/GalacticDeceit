@@ -55,6 +55,7 @@ private:
     QMap<int, ClientData> clients;
     QMap<int, int> collectedVotes;
     bool isGameStarted;
+    bool isAllTasksDone;
     int numRemaningVotes;
     int numRemainingPlayers;
 

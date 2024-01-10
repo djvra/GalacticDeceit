@@ -62,6 +62,7 @@ public class AU_PlayerController : MonoBehaviour
     public bool reportingInProgress = false;
     private int reportId;
     [SerializeField] private TMPro.TextMeshProUGUI nameText;
+    private AU_Body nearBody;
 
     private void Awake()
     {
@@ -212,6 +213,17 @@ public class AU_PlayerController : MonoBehaviour
                 //Debug.Log("Entered task area");
             }
         }
+
+        /*else if (other.CompareTag("Body"))
+        {
+            Transform body = other.transform;
+            if (body != null)
+            {
+                // The player entered the area of a task
+                nearBody = body.GetComponent<AU_Body>();
+                //Debug.Log("Entered task area");
+            }
+        }*/
         
     }
 
@@ -241,6 +253,17 @@ public class AU_PlayerController : MonoBehaviour
                 //Debug.Log("Left task area");
             }
         }
+
+        /*else if (other.CompareTag("Body"))
+        {
+            Transform body = other.transform;
+            if (body != null && nearBody == body)
+            {
+                // The player left the area of the current task
+                nearBody = null;
+                //Debug.Log("Left task area");
+            }
+        }*/
     }
 
     void KillTarget(InputAction.CallbackContext context) {
@@ -431,6 +454,29 @@ public class AU_PlayerController : MonoBehaviour
             OnPlayerReported.Invoke(reportId); 
         }    
     }
+
+    public void ReportBody()
+    {
+        Debug.LogWarning("ReportBody() called");
+        
+        if (bodiesFound == null)
+            return;
+        if (bodiesFound.Count == 0)
+            return;
+        if (isDead) // imposter da report edebilir
+            return;    
+
+            //Order the list by the distance to the killer
+            Transform tempBody = bodiesFound[bodiesFound.Count - 1];
+            allBodies.Remove(tempBody);
+            bodiesFound.Remove(tempBody);
+            tempBody.GetComponent<AU_Body>().Report();
+            Debug.Log("Reported player ");
+            reportId++;
+            OnPlayerReported.Invoke(reportId);
+    }
+
+
 
     public void initializeTaskPointers()
     {

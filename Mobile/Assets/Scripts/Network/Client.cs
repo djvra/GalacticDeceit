@@ -52,6 +52,7 @@ public class Client : MonoBehaviour
     public static bool reportInProgress = false;
     private Vector3 UIControlsPosition;
 
+
     private ConcurrentQueue<object> outgoingData = new ConcurrentQueue<object>();
     private int? _votedPlayerId;
     private int? _reportedPlayerId;
@@ -218,6 +219,11 @@ public class Client : MonoBehaviour
                 return;
             }
 
+            // set character sprite to invisible for other players
+
+            // get players canvas and set it to invisible
+            otherClientsObjects[playerId].GetComponentInChildren<Canvas>().enabled = false;
+
             AU_PlayerController otherPlayerController = otherClientsObjects[playerId].GetComponent<AU_PlayerController>();
             otherPlayerController.Die();
 
@@ -229,7 +235,7 @@ public class Client : MonoBehaviour
                 myAvatarSprite.color = Color.clear;
             }
 
-            otherPlayersData.Remove(playerId ,out var ignore);
+            otherPlayersData.Remove(playerId, out var ignore);
 
             Transform part = sprite.transform.GetChild(0);
             SpriteRenderer myPartSprite = part.GetComponent<SpriteRenderer>();
@@ -520,6 +526,10 @@ public class Client : MonoBehaviour
                     {
                         Transform otherClientAvatar = clientGo.transform;
                         otherClientAvatar.localScale = new Vector2(Mathf.Sign(movementVector.x), 1);
+
+                        // get name canvas of the other player change its direction like above, otherwise names are reversed
+                        Transform otherClientName = clientGo.transform.GetChild(1);
+                        otherClientName.localScale = new Vector2(Mathf.Sign(movementVector.x), 1);
                     }
 
                     /*var clientGoTransform = clientGo.transform;
@@ -581,5 +591,10 @@ public class Client : MonoBehaviour
         }
 
         infoTextUpdated = true;
+    }
+
+    public void TryReconnect()
+    {
+        BluetoothPlayerMovement.IsConnected = false;
     }
 }

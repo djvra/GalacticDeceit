@@ -8,6 +8,7 @@ Server::Server(QWidget *parent)
     reportTimer = new QTimer(this);
     updateTimer = new QTimer(this);
     isGameStarted = false;
+    isAllTasksDone = false;
     numRemainingPlayers = 0;
     numRemaningVotes = 0;
 
@@ -274,7 +275,11 @@ void Server::checkGameStatus()
     // TODO: Revisite the finishing conditions
     if (isGameOver()) {
         int winner;
-        if (isImposterAlive()) {
+        if (isAllTasksDone) {
+            qDebug() << "Game is over. Crewmate win!";
+            winner = 1;
+        }
+        else if (isImposterAlive()) {
             qDebug() << "Game is over. Imposter win!";
             winner = 0;
         }
@@ -314,6 +319,8 @@ bool Server::isGameOver()
         if (data.numRemainingTask > 0 && !data.isImposter)
             return false;
     }
+
+    isAllTasksDone = true;
 
     return true;
 }
