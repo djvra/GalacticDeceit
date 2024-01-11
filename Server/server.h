@@ -28,7 +28,7 @@ public:
     QMap<int, ClientData>::iterator findImposter();
     bool isImposterAlive();
     bool isGameOver();
-    void checkGameStatus();
+    bool checkGameStatus();
     void sendAllClients(QByteArray sendData);
 
 private slots:
