@@ -43,7 +43,7 @@ public class AU_PlayerController : MonoBehaviour
     [SerializeField] InputAction REPORT;
     [SerializeField] LayerMask ignoreForBody;
 
-    public float killCooldownTime = 2f;
+    public float killCooldownTime = 5f;
     private float killCooldownTimer;
     private bool isKillOnCooldown;
     public int id;
@@ -411,6 +411,9 @@ public class AU_PlayerController : MonoBehaviour
     {
         foreach(var body in allBodies)
         {
+            if (body == null)
+                continue;
+                
             RaycastHit hit;
             Ray ray = new Ray(transform.position, body.position - transform.position);
             Debug.DrawRay(transform.position, body.position - transform.position, Color.cyan);
@@ -474,6 +477,42 @@ public class AU_PlayerController : MonoBehaviour
             Debug.Log("Reported player ");
             reportId++;
             OnPlayerReported.Invoke(reportId);
+    }
+
+    public void RemoveBodies()
+    {
+        Debug.Log("RemoveBodies() called");
+        // print size of all bodies
+        Debug.Log("allBodies size: " + allBodies.Count);
+        // print size of bodiesFound
+        Debug.Log("bodiesFound size: " + bodiesFound.Count);
+
+        // Iterate over the bodiesFound list
+        foreach (var body in bodiesFound)
+        {
+            Debug.Log("Removing body");
+            // Remove the body from the allBodies list
+            if (allBodies.Contains(body))
+            {
+                allBodies.Remove(body);
+            }
+
+            // Destroy the body GameObject
+            if (body != null)
+            {
+                Debug.Log("Destroying body");
+                Destroy(body.gameObject);
+            }
+        }
+
+        // Clear the bodiesFound list
+        bodiesFound.Clear();
+
+        // Destroy all bodies in the scene
+        foreach (var bodyInScene in FindObjectsOfType<AU_Body>())
+        {
+            Destroy(bodyInScene.gameObject);
+        }
     }
 
 

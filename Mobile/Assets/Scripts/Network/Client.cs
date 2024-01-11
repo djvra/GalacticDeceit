@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class Client : MonoBehaviour
 {
@@ -26,9 +27,11 @@ public class Client : MonoBehaviour
     public GameObject TimerGO;
     public TMPro.TMP_Dropdown devicesDropdown;
     private bool infoTextUpdated = false;
-    public TMPro.TextMeshProUGUI gameEndText;
+    public TMPro.TextMeshProUGUI gameEndWinner;
+    public TMPro.TextMeshProUGUI gameEndInfo;
     public GameObject GameEndGo;
     private bool GameEndTextActive = false;
+    public GameObject background;
 
     // Network
     public string server;
@@ -189,22 +192,35 @@ public class Client : MonoBehaviour
         else if (actionType == Utils.ActionType.BackStart)
         {
             player.transform.position = Vector3.zero;
+            playerController.RemoveBodies();
         }
 
         else if (actionType == Utils.ActionType.GameOver )
         {
             Debug.Log("GameEnd: " + action.id);
             
-            if (action.id == 0) 
+            if (action.id > -1) 
             {
-                gameEndText.text = "Imposter \nWin!";
-            }
-            else
+                gameEndWinner.text = "Imposter \nWin!";
+                otherClientsData.TryGetValue(action.id, out ClientTransform winner);
+                gameEndInfo.text = $"Imposter was {winner.name}!";
+            } else if (action.id == -1)
             {
-                gameEndText.text = "Crewmates \nWin!";
+                gameEndWinner.text = "Crewmates \nWin!";
+                gameEndInfo.text = "Imposter was voted out!";
+            } else if (action.id == -2)
+            {
+                gameEndWinner.text = "Crewmates \nWin!";
+                gameEndInfo.text = "All tasks are done!";
+            } else {
+                Debug.Log("Wrong id for GameOver action.");
             }
 
             GameEndTextActive = true;
+            
+            //background.SetActive(true);
+            // disable characters camera
+            //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 

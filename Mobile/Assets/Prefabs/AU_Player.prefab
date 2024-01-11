@@ -796,7 +796,7 @@ MonoBehaviour:
   ignoreForBody:
     serializedVersion: 2
     m_Bits: 0
-  killCooldownTime: 15
+  killCooldownTime: 5
   id: 0
   OnPlayerKilled:
     m_PersistentCalls:

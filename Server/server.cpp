@@ -100,6 +100,7 @@ void Server::chooseImposter()
     // Select the imposter randomly
     int randomIndex = QRandomGenerator::global()->bounded(clients.size());
     clients[randomIndex].isImposter = true;
+    clients[randomIndex].numRemainingTask = 0;
 }
 
 void Server::handleNewTcpConnection()
@@ -277,15 +278,15 @@ void Server::checkGameStatus()
         int winner;
         if (isAllTasksDone) {
             qDebug() << "Game is over. Crewmate win!";
-            winner = 1;
+            winner = -2; // All tasks are done!
         }
         else if (isImposterAlive()) {
             qDebug() << "Game is over. Imposter win!";
-            winner = 0;
+            winner = findImposter().value().id;
         }
         else {
             qDebug() << "Game is over. Crewmate win!";
-            winner = 1;
+            winner = -1; // Imposter was voted out!
         }
 
         QJsonObject responseObj;
@@ -311,9 +312,11 @@ bool Server::isImposterAlive()
 
 bool Server::isGameOver()
 {
+    // 2 kisi kaldi biri imposter
     if (numRemainingPlayers <= 2 || !isImposterAlive())
         return true;
 
+    // crewmatein yapilan task sayisi hesaplandi
     for (auto it = clients.begin(); it != clients.end(); ++it) {
         ClientData data = it.value();
         if (data.numRemainingTask > 0 && !data.isImposter)
