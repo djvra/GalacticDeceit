@@ -9,10 +9,6 @@ This project aims to develop a multiplayer game inspired by Among Us. Players wi
 - Central server displays players' status and the game map
 - Electronic cards with joysticks for character movements
 
-## 🎥 Demo
-
-Check out the project demo on YouTube: [Demo Video](https://www.youtube.com/watch?v=NC79Xh6U8Fg)
-
 ## 🛠️ Getting Started
 
 To get started with the project, follow these steps:
@@ -21,6 +17,14 @@ To get started with the project, follow these steps:
 2. Set up the server
 3. Connect smartphones with electronic cards to control characters
 4. Enjoy playing the game with friends!
+
+## 📑 Project Documentation
+
+For more detailed information, refer to the [Project Documentation](https://github.com/djvra/GalacticDeceit/blob/main/project_documentation.pdf).
+
+## 🎥 Demo
+
+Check out the project demo on YouTube: [Demo Video](https://www.youtube.com/watch?v=NC79Xh6U8Fg)
 
 ## ⚖️ License
 
