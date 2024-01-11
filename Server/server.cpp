@@ -213,9 +213,6 @@ void Server::handleReport()
     /*if (collectedVotes.empty())
         return;*/
 
-
-
-
     int maxVotes = 0;
     QList<int> playersWithMaxVotes;
 
@@ -232,6 +229,8 @@ void Server::handleReport()
         }
     }
 
+    bool gameOver = false;
+
     if (playersWithMaxVotes.size() == 1) {
         int id = playersWithMaxVotes[0];
         clients[id].alive = false;
@@ -244,25 +243,23 @@ void Server::handleReport()
         QJsonDocument jsonObjDoc(jsonObj);
         sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
         emit updatePlayer(clients[id]);
-        checkGameStatus();
+        gameOver = checkGameStatus();
     }
 
     collectedVotes.clear();
-
-    // Send message for come back start position
-    QJsonObject jsonObj;
-    jsonObj["actionType"] = BackStart;
-    jsonObj["id"] = -1;
-    QJsonDocument jsonObjDoc(jsonObj);
-    QTimer::singleShot(1000, [this, jsonObjDoc](){
-        sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
-    });
-
-    qDebug() << jsonObj;
-
     emit resetVotes();
 
-    checkGameStatus();
+    if (!gameOver) {
+        // Send message for come back start position
+        QJsonObject jsonObj;
+        jsonObj["actionType"] = BackStart;
+        jsonObj["id"] = -1;
+        QJsonDocument jsonObjDoc(jsonObj);
+        QTimer::singleShot(1000, [this, jsonObjDoc](){
+            sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
+        });
+        qDebug() << jsonObj;
+    }
 }
 
 QMap<int, ClientData>::iterator Server::findImposter()
@@ -275,7 +272,7 @@ QMap<int, ClientData>::iterator Server::findImposter()
     return clients.end(); // Return the end iterator if imposter is not found
 }
 
-void Server::checkGameStatus()
+bool Server::checkGameStatus()
 {
     // TODO: Revisite the finishing conditions
     if (isGameOver()) {
@@ -303,9 +300,10 @@ void Server::checkGameStatus()
         });
 
 
-
+        return true;
         // TODO-NEXT: Clear clients map, set isGameStarted as false
     }
+    return false;
 }
 
 bool Server::isImposterAlive()
