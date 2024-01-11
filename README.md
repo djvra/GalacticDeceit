@@ -1,6 +1,6 @@
 # 👽 Galactic Deceit 
 
-This project aims to develop a multiplayer game inspired by Among Us. Players will connect to a central computer using their smartphones. Electronic cards with joysticks will be linked to their phones to control character movements. The central computer will display all players and the game map, while players connecting from their phones will only see their own perspective.
+This project aims to develop a multiplayer game inspired by Among Us. Players will connect to a game server using their mobile/desktop application. Electronic cards with joysticks will be linked to their phones to control character movements. The game server will display all players on the game map with their status.
 
 ## 🚀 Features
 
