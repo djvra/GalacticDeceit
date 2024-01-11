@@ -194,6 +194,7 @@ void Server::handleTcpData(QTcpSocket *socket)
             case TaskDone:
                 clients[id].numRemainingTask -= 1;
                 checkGameStatus();
+                emit updatePlayer(clients[id]);
                 break;
             default:
                 break;
@@ -239,8 +240,11 @@ void Server::handleReport()
         jsonObj["actionType"] = Killed;
         jsonObj["id"] = id;
         qDebug() << jsonObj;
+        --numRemainingPlayers;
         QJsonDocument jsonObjDoc(jsonObj);
         sendAllClients(jsonObjDoc.toJson(QJsonDocument::Compact));
+        emit updatePlayer(clients[id]);
+        checkGameStatus();
     }
 
     collectedVotes.clear();
@@ -277,15 +281,15 @@ void Server::checkGameStatus()
     if (isGameOver()) {
         int winner;
         if (isAllTasksDone) {
-            qDebug() << "Game is over. Crewmate win!";
+            qDebug() << "Game is over. Crewmate win! -2";
             winner = -2; // All tasks are done!
         }
         else if (isImposterAlive()) {
-            qDebug() << "Game is over. Imposter win!";
+            qDebug() << "Game is over. Imposter win! > 0";
             winner = findImposter().value().id;
         }
         else {
-            qDebug() << "Game is over. Crewmate win!";
+            qDebug() << "Game is over. Crewmate win! -1";
             winner = -1; // Imposter was voted out!
         }
 
