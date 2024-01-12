@@ -11,12 +11,15 @@ This project aims to develop a multiplayer game inspired by Among Us. Players wi
 
 ## 🛠️ Getting Started
 
-To get started with the project, follow these steps:
+You have the option to construct the server application with Qt and the mobile application with Unity, or simply utilize the provided release files located in the builds folder. To get started with the provided pre-build apps, follow these steps:
 
 1. Clone the repository
 2. Set up the server
-3. Connect smartphones with electronic cards to control characters
-4. Enjoy playing the game with friends!
+   - For Windows: extract `builds/server_windows_release.zip` file and run `among-us-gui`.
+   - For Linux: extract `builds/server_linux_release.zip` file and run `among-us-gui`.
+3. Install the game apk on your mobile device.
+4. Log in to the server using the server IP, and your game will started when initiated from the server.
+5. Enjoy playing the game with friends!
 
 ## 📑 Project Documentation
 
