@@ -68,6 +68,7 @@ void Server::stopGame()
         updateTimer->stop();
 
     isGameStarted = false;
+    isAllTasksDone = false;
     clients.clear();
 }
 
@@ -87,7 +88,7 @@ void Server::startGame()
     qDebug() << "Game is started.";
 
     // Set up a new timer to send the player informations on each frame
-    if (updateTimer && updateTimer->isActive())
+    if (updateTimer->isActive())
         updateTimer->stop();
 
     // Set the interval in milliseconds (e.g., 1000 ms = 1 second)
@@ -301,7 +302,7 @@ bool Server::checkGameStatus()
 
 
         return true;
-        // TODO-NEXT: Clear clients map, set isGameStarted as false
+        stopGame();
     }
     return false;
 }
