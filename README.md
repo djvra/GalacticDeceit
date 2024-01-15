@@ -17,9 +17,16 @@ You have the option to construct the server application with Qt and the mobile a
 2. Set up the server
    - For Windows: extract `builds/server_windows_release.zip` file and run `among-us-gui`.
    - For Linux: extract `builds/server_linux_release.zip` file and run `among-us-gui`.
-3. Install the game apk on your mobile device.
-4. Log in to the server using the server IP, and your game will started when initiated from the server.
-5. Enjoy playing the game with friends!
+3. Connect to one of the joysticks via bluetooth from the mobile device. 
+   - There are labels on the back of the joysticks, label 5 for HC05, label 6 for HC06, label 3 for JOYSTICK-3.
+   - The password is "1234".
+4. Install the game apk on your mobile device.
+   - Select a joystick from the dropdown menu or select "None" to play without a joystick.
+   - Enter the server IP.
+   - Enter an username.
+   - Press Login.
+5. Press the "Start Game" button on the server
+6. Enjoy playing the game with friends!
 
 ## 📑 Project Documentation
 
